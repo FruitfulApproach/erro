@@ -79,6 +79,12 @@ class ArrowRenameDialog(QDialog):
         
         layout.addLayout(letter_grid)
         
+        # Global rename checkbox
+        from PyQt6.QtWidgets import QCheckBox
+        self.global_rename_checkbox = QCheckBox("Replace all occurrences throughout the diagram")
+        self.global_rename_checkbox.setToolTip("If checked, replaces this name everywhere it appears on arrows and objects")
+        layout.addWidget(self.global_rename_checkbox)
+        
         # Dialog buttons (OK/Cancel)
         button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -129,6 +135,10 @@ class ArrowRenameDialog(QDialog):
     def get_name(self):
         """Get the current name."""
         return self._current_name
+    
+    def get_global_rename(self):
+        """Get the state of the global rename checkbox."""
+        return self.global_rename_checkbox.isChecked()
     
     def set_name(self, name):
         """Set the current name."""

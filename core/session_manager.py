@@ -196,7 +196,8 @@ class SessionManager:
                         'source_id': id(item.get_source()),
                         'target_id': id(item.get_target()),
                         'text': text,
-                        'color': item.pen().color().name() if hasattr(item, 'pen') else "#000000"
+                        'color': item.pen().color().name() if hasattr(item, 'pen') else "#000000",
+                        'is_inclusion': getattr(item, '_is_inclusion', False)  # Save inclusion property
                     })
             
             return {
@@ -402,6 +403,10 @@ class SessionManager:
                         color = QColor(arrow_data['color'])
                         pen = QPen(color, 2)  # Use default width
                         arrow._pen = pen  # Set private attribute directly
+                    
+                    # Restore inclusion property if available
+                    if 'is_inclusion' in arrow_data:
+                        arrow._is_inclusion = arrow_data['is_inclusion']
                     
                     # Add to scene
                     scene.addItem(arrow)

@@ -14,7 +14,7 @@ class Object(Node):
         super().__init__(parent)
         self._text = text
         self._base_name = text  # Store the original/base name
-        self._font = QFont("Arial", 14, QFont.Weight.Bold)  # Bold font for better visibility
+        self._font = QFont("Arial", 14)  # Normal weight font
         self._label_manually_hidden = False  # Manual label hiding flag
         
         # Object-specific styling - transparent background and border
@@ -126,7 +126,7 @@ class Object(Node):
         menu = QMenu()
         
         # Add "Edit Name" action
-        edit_name_action = QAction("Edit Name", menu)
+        edit_name_action = QAction("✏️ Edit Name", menu)
         edit_name_action.triggered.connect(self.edit_name)
         menu.addAction(edit_name_action)
         
@@ -134,7 +134,7 @@ class Object(Node):
         menu.addSeparator()
         
         # Add "Hide Label" toggle action
-        hide_label_action = QAction("Hide Label", menu)
+        hide_label_action = QAction("👁️‍🗨️ Hide Label", menu)
         hide_label_action.setCheckable(True)
         hide_label_action.setChecked(self._label_manually_hidden)
         hide_label_action.triggered.connect(self.toggle_label_visibility)
@@ -144,7 +144,7 @@ class Object(Node):
         menu.addSeparator()
         
         # Add "Delete" action
-        delete_action = QAction("Delete", menu)
+        delete_action = QAction("🗑️ Delete", menu)
         delete_action.triggered.connect(self.delete_object)
         menu.addAction(delete_action)
         
@@ -161,8 +161,14 @@ class Object(Node):
         if dialog.exec() == dialog.DialogCode.Accepted:
             new_name = dialog.get_name()
             if new_name and new_name != self._base_name:  # Compare with base name
-                # Create and push undo command
-                command = RenameObject(self, self._base_name, new_name)
+                if dialog.get_global_rename():
+                    # Global rename - replace all occurrences in the diagram
+                    from core.undo_commands import GlobalRename
+                    command = GlobalRename(self.scene(), self._base_name, new_name)
+                else:
+                    # Regular rename - just this object
+                    command = RenameObject(self, self._base_name, new_name)
+                
                 app = QApplication.instance()
                 app.undo_stack.push(command)
     

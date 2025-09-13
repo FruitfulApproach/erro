@@ -77,6 +77,15 @@ class ProofStep(ABC):
                         return i
         return -1
 
+    def _check_auto_grid_spacing(self):
+        """Check and adjust grid spacing if auto-spacing is enabled.
+        
+        NOTE: This method is disabled during proof step execution to prevent 
+        unwanted node movement. ProofSteps should never move nodes.
+        """
+        # Disabled to prevent node movement during proof step execution
+        return
+
 
 class IdentityProofStep(ProofStep):
     """Proof step that creates a duplicate object with identity morphism arrow."""
@@ -97,7 +106,7 @@ class IdentityProofStep(ProofStep):
     def button_text(objects: List[Any], arrows: List[Any]) -> str:
         """Return the button text for this proof step."""
         obj_name = objects[0].get_text() if objects else "Object"
-        return f"Identity on {obj_name}"
+        return f"🔁 Identity on {obj_name}"
     
     def _create_unicode_subscript(self, text: str) -> str:
         """Create unicode subscript for identity arrow label."""
@@ -123,11 +132,11 @@ class IdentityProofStep(ProofStep):
                 break
         
         if can_convert_all:
-            return f"1{subscript_text}"
+            return f"𝟏{subscript_text}"
         elif len(text) == 1:
-            return f"1_{text}"
+            return f"𝟏({text})"
         else:
-            return f"1_{{{text}}}"
+            return f"𝟏({text})"
     
     def apply(self) -> None:
         """Create duplicate object and identity arrow."""
@@ -220,7 +229,7 @@ class CompositionProofStep(ProofStep):
     @staticmethod
     def button_text(objects: List[Any], arrows: List[Any]) -> str:
         """Return the button text for this proof step."""
-        return "Compose Arrows"
+        return "∘ Compose Arrows"
     
     def apply(self) -> None:
         """Create a composed arrow while preserving the original arrows."""
@@ -280,12 +289,12 @@ class CancelIdentityProofStep(ProofStep):
         text = arrow.get_text()
         
         # Must contain at least one identity morphism
-        if '1_' not in text:
+        if '𝟏(' not in text:
             return False
         
-        # But must NOT be a pure identity morphism (like "1_X")
+        # But must NOT be a pure identity morphism (like "𝟏(X)")
         import re
-        if re.match(r'^1_[^∘]+$', text.strip()):
+        if re.match(r'^𝟏\([^∘)]+\)$', text.strip()):
             return False  # Pure identity, nothing to cancel
         
         return True  # Has identities in composition, can cancel them
@@ -293,7 +302,7 @@ class CancelIdentityProofStep(ProofStep):
     @staticmethod
     def button_text(objects: List[Any], arrows: List[Any]) -> str:
         """Return the text for the proof step button."""
-        return "Cancel Identities"
+        return "✂️ Cancel Identities"
     
     def __init__(self, scene, objects, arrows):
         """
@@ -316,38 +325,38 @@ class CancelIdentityProofStep(ProofStep):
         Remove identity morphisms and adjacent composition symbols.
         
         Examples:
-            "f∘g∘1_A∘h" -> "f∘g∘h"
-            "1_X∘f∘g" -> "f∘g"  
-            "f∘g∘1_Y" -> "f∘g"
-            "f∘1_A∘g∘h" -> "f∘g∘h"
-            "1_X" -> "1_X" (no change - pure identity)
+            "f∘g∘𝟏(A)∘h" -> "f∘g∘h"
+            "𝟏(X)∘f∘g" -> "f∘g"  
+            "f∘g∘𝟏(Y)" -> "f∘g"
+            "f∘𝟏(A)∘g∘h" -> "f∘g∘h"
+            "𝟏(X)" -> "𝟏(X)" (no change - pure identity)
         """
         import re
         
-        # Check if this is a pure identity morphism (just "1_X" with no composition)
-        if re.match(r'^1_[^∘]+$', text.strip()):
+        # Check if this is a pure identity morphism (just "𝟏(X)" with no composition)
+        if re.match(r'^𝟏\([^∘)]+\)$', text.strip()):
             # This is a pure identity morphism, don't cancel it
             return text
         
         # Pattern to match identity morphism with composition symbols
-        # This matches: ∘1_<anything>∘ OR ∘1_<anything> OR 1_<anything>∘
-        pattern = r'(∘1_[^∘]+∘|∘1_[^∘]+$|^1_[^∘]+∘)'
+        # This matches: ∘𝟏(<anything>)∘ OR ∘𝟏(<anything>) OR 𝟏(<anything>)∘
+        pattern = r'(∘𝟏\([^)]+\)∘|∘𝟏\([^)]+\)$|^𝟏\([^)]+\)∘)'
         
         # Keep removing until no more identities found
         while True:
             original = text
             
-            # Remove identity with composition symbols on both sides: ∘1_X∘ -> ∘
-            text = re.sub(r'∘1_[^∘]+∘', '∘', text)
+            # Remove identity with composition symbols on both sides: ∘𝟏(X)∘ -> ∘
+            text = re.sub(r'∘𝟏\([^)]+\)∘', '∘', text)
             
-            # Remove identity at the beginning with composition: 1_X∘ -> (empty)
-            text = re.sub(r'^1_[^∘]+∘', '', text)
+            # Remove identity at the beginning with composition: 𝟏(X)∘ -> (empty)
+            text = re.sub(r'^𝟏\([^)]+\)∘', '', text)
             
-            # Remove identity at the end with composition: ∘1_X -> (empty)  
-            text = re.sub(r'∘1_[^∘]+$', '', text)
+            # Remove identity at the end with composition: ∘𝟏(X) -> (empty)  
+            text = re.sub(r'∘𝟏\([^)]+\)$', '', text)
             
-            # Remove standalone identity: 1_X -> (empty)
-            text = re.sub(r'^1_[^∘]+$', '', text)
+            # Remove standalone identity: 𝟏(X) -> (empty)
+            text = re.sub(r'^𝟏\([^)]+\)$', '', text)
             
             # If no changes were made, we're done
             if text == original:
@@ -390,8 +399,8 @@ class TakeKernelProofStep(ProofStep):
         """Return the button text for this proof step."""
         if arrows and len(arrows) == 1:
             arrow_text = arrows[0].get_text()
-            return f"Take Ker({arrow_text})"
-        return "Take Kernel"
+            return f"🔽 Take Ker({arrow_text})"
+        return "🔽 Take Kernel"
     
     def apply(self) -> None:
         """Create kernel object and morphism."""
@@ -401,19 +410,37 @@ class TakeKernelProofStep(ProofStep):
         # Get the source node of the original arrow
         source_node = self.arrow._start_node
         
-        # Create kernel object name (𝒦𝑒𝓇 f) - full mathematical script
+        # Create kernel object name (Ker e) - using normal text
         arrow_text = self.arrow.get_text()
-        kernel_name = f"𝒦ℯ𝓇 {arrow_text}"
+        kernel_name = f"Ker {arrow_text}"
         
-        # Position the kernel object to the left of the source
+        # Position the kernel object - find closest open grid point
         source_pos = source_node.pos()
-        kernel_pos = QPointF(source_pos.x() - 150, source_pos.y())
+        grid_size = getattr(self.scene, '_grid_size', 50)
         
+        # Try positions in order of preference: left, right, top, bottom
+        potential_positions = [
+            QPointF(source_pos.x() - grid_size, source_pos.y()),      # Left
+            QPointF(source_pos.x() + grid_size, source_pos.y()),      # Right  
+            QPointF(source_pos.x(), source_pos.y() - grid_size),      # Top
+            QPointF(source_pos.x(), source_pos.y() + grid_size),      # Bottom
+        ]
+        
+        kernel_pos = None
         # Check if position is occupied and find nearest free position
         if hasattr(self.scene, '_is_grid_position_occupied'):
-            kernel_pos = self.scene.snap_to_grid(kernel_pos)
-            if self.scene._is_grid_position_occupied(kernel_pos):
-                kernel_pos = self.scene._find_nearest_free_grid_position(kernel_pos)
+            for pos in potential_positions:
+                snapped_pos = self.scene.snap_to_grid(pos)
+                if not self.scene._is_grid_position_occupied(snapped_pos):
+                    kernel_pos = snapped_pos
+                    break
+            
+            # If all close positions are occupied, find any nearest free position
+            if kernel_pos is None:
+                kernel_pos = self.scene._find_nearest_free_grid_position(potential_positions[0])
+        else:
+            # Fallback if no grid checking available
+            kernel_pos = potential_positions[0]
         
         # Create kernel object
         from widget.object_node import Object
@@ -421,9 +448,9 @@ class TakeKernelProofStep(ProofStep):
         self.kernel_object.setPos(kernel_pos)
         self.scene.addItem(self.kernel_object)
         
-        # Create kernel arrow k_f : Ker f -> A
+        # Create kernel arrow 𝐤(f) : �er f -> A (keeping parentheses format for clarity)
         from widget.arrow import Arrow
-        kernel_arrow_name = f"k_{arrow_text}"
+        kernel_arrow_name = f"𝐤({arrow_text})"
         self.kernel_arrow = Arrow(self.kernel_object, source_node, kernel_arrow_name)
         
         # Kernel arrows are automatically inclusions and this cannot be changed
@@ -455,12 +482,12 @@ class TakeElementProofStep(ProofStep):
     @classmethod
     def get_name(cls) -> str:
         """Return the human-readable name of this proof step."""
-        return "Take Element"
+        return "📋 Take Element"
     
     @classmethod
     def get_description(cls) -> str:
         """Return a description of what this proof step does."""
-        return "Take an element from an object"
+        return "📋 Take an element from an object"
     
     @classmethod
     def is_applicable(cls, objects, arrows, scene=None) -> bool:
@@ -495,9 +522,27 @@ class TakeElementProofStep(ProofStep):
             base_name = self.obj.get_text()  # This returns the base name
             new_display_text = f"{self.element_symbol}:{base_name}"
             self.obj.set_text(new_display_text)  # Only changes display, not base name
+            
+            # Update connection points of all arrows connected to this object
+            self._update_connected_arrows()
         else:
             # Dialog was cancelled
             raise Exception("Element dialog cancelled")
+    
+    def _update_connected_arrows(self):
+        """Update connection points of all arrows connected to this object."""
+        if not self.obj or not self.obj.scene():
+            return
+        
+        # Find all arrows connected to this object
+        for item in self.obj.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to our object
+                if item.get_source() == self.obj or item.get_target() == self.obj:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
     
     def unapply(self) -> None:
         """Remove the element symbol and restore original text."""
@@ -523,12 +568,12 @@ class MapElementProofStep(ProofStep):
     @classmethod
     def get_name(cls) -> str:
         """Return the human-readable name of this proof step."""
-        return "Map Element"
+        return "🔀 Map Element"
     
     @classmethod
     def get_description(cls) -> str:
         """Return a description of what this proof step does."""
-        return "Map an element from domain to codomain via a function"
+        return "🔀 Map an element from domain to codomain via a function"
     
     @classmethod
     def is_applicable(cls, objects, arrows, scene=None) -> bool:
@@ -601,53 +646,94 @@ class MapElementProofStep(ProofStep):
         
         # Modify the codomain node if we have a selected element
         if self.element_name:
-            # Get the codomain's base name (e.g., "B")
-            codomain_base_name = codomain_node.get_text()  # This returns base_name
+            # Get the codomain's current display text and extract base name
+            current_codomain_text = codomain_node.get_display_text()
+            
+            # Extract the true base name from the display text
+            if ':' in current_codomain_text:
+                # For "x=y,z:C" format, base name is "C" (part after the colon)
+                codomain_base_name = current_codomain_text.split(':', 1)[1].strip()
+            else:
+                # For simple object names like "D", base name is the whole text
+                codomain_base_name = current_codomain_text.strip()
             
             # Handle composition notation properly
             mapped_element = self._create_mapped_element_notation(self.element_name, self.function_name)
             
-            # Set the codomain to show "f(x):B" or "(g∘f)(x):B" format
-            new_display_text = f"{mapped_element}:{codomain_base_name}"
+            # Check if codomain already has elements (contains colon and elements before it)
+            if ':' in current_codomain_text:
+                # Extract existing elements part (left of colon)
+                existing_elements = current_codomain_text.split(':', 1)[0].strip()
+                if existing_elements:
+                    # Prepend new mapped element to existing elements
+                    new_display_text = f"{mapped_element},{existing_elements}:{codomain_base_name}"
+                else:
+                    # Colon exists but no elements before it
+                    new_display_text = f"{mapped_element}:{codomain_base_name}"
+            else:
+                # No colon, treat as simple object name - add mapped element
+                new_display_text = f"{mapped_element}:{codomain_base_name}"
             
             # Update the codomain node display text while preserving base name
             codomain_node.set_text(new_display_text)
             codomain_node._base_name = codomain_base_name
+            
+            # Update connection points of all arrows connected to the codomain object
+            self._update_connected_arrows(codomain_node)
     
     def _create_mapped_element_notation(self, element_name, function_name):
-        """Create proper function composition notation for mapped elements."""
-        # Handle zero elements specially
-        if '=0' in element_name:
-            # For zero elements like "(e∘k_e)(a)=0", map to "f(0)=0"
-            return f"{function_name}(0)=0"
+        """Create proper function application notation for mapped elements, handling equalities."""
+        # Check if this is an equality expression
+        if '=' in element_name:
+            return self._map_equality_expression(element_name, function_name)
         
-        # Check if the element is already a function application
-        if '(' in element_name and ')' in element_name:
-            # Extract the existing composition and base element
-            # e.g., "f(a)" -> composition="f", base_element="a"
-            # e.g., "(g∘f)(a)" -> composition="g∘f", base_element="a"
+        # Simple element - just concatenate
+        return f"{function_name}{element_name}"
+    
+    def _map_equality_expression(self, equality_expr, function_name):
+        """Map an equality expression, handling the special case where the whole expression equals zero."""
+        # Check if the expression ends with =0 (the whole thing equals zero)
+        if equality_expr.endswith('=0'):
+            # This is like "Aa=0" - the whole "Aa" expression equals 0
+            # When mapped by f, it becomes "fAa=0"
+            base_expr = equality_expr[:-2]  # Remove "=0"
+            return f"{function_name}{base_expr}=0"
+        
+        # Check if the expression starts with 0= (zero equals something)
+        if equality_expr.startswith('0='):
+            # This is like "0=B" - zero equals some expression B
+            # When mapped by f, it becomes "0=fB"
+            right_expr = equality_expr[2:]  # Remove "0="
+            return f"0={function_name}{right_expr}"
+        
+        # General equality case: split on the first '=' and map both sides
+        parts = equality_expr.split('=', 1)
+        if len(parts) == 2:
+            left_side = parts[0].strip()
+            right_side = parts[1].strip()
             
-            # Find the base element (after the last opening parenthesis)
-            last_paren = element_name.rfind('(')
-            if last_paren != -1:
-                base_element = element_name[last_paren+1:element_name.rfind(')')]
-                
-                # Extract the existing function composition
-                existing_composition = element_name[:last_paren]
-                
-                # If it's already in composition form like "(g∘f)", add to it
-                if existing_composition.startswith('(') and existing_composition.endswith(')'):
-                    # Remove outer parentheses and add new function
-                    inner_composition = existing_composition[1:-1]
-                    new_composition = f"({function_name}∘{inner_composition})"
-                else:
-                    # Simple function like "f", convert to composition
-                    new_composition = f"({function_name}∘{existing_composition})"
-                
-                return f"{new_composition}({base_element})"
+            # Map both sides
+            mapped_left = f"{function_name}{left_side}"
+            mapped_right = f"{function_name}{right_side}"
+            return f"{mapped_left}={mapped_right}"
         
-        # Simple element name, just apply the function
-        return f"{function_name}({element_name})"
+        # Not a recognizable equality, fall back to regular mapping
+        return f"{function_name}{equality_expr}"
+    
+    def _update_connected_arrows(self, node):
+        """Update connection points of all arrows connected to the given node."""
+        if not node or not node.scene():
+            return
+        
+        # Find all arrows connected to this node
+        for item in node.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to the node
+                if item.get_source() == node or item.get_target() == node:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
     
     def unapply(self) -> None:
         """Restore the original codomain node text."""
@@ -666,7 +752,7 @@ class MapElementProofStep(ProofStep):
 
 
 class KernelAtElementIsZeroProofStep(ProofStep):
-    """Proof step to mark kernel elements as zero: (e∘k_e)(a) = 0."""
+    """Proof step to mark kernel elements as zero: (e∘𝐤(e))(a) = 𝟎."""
     
     def __init__(self, scene, selected_objects, selected_arrows):
         super().__init__(scene)
@@ -679,12 +765,12 @@ class KernelAtElementIsZeroProofStep(ProofStep):
     @classmethod
     def get_name(cls) -> str:
         """Return the human-readable name of this proof step."""
-        return "Kernel at Element is 0"
+        return "⚬ Kernel at Element is 0"
     
     @classmethod
     def get_description(cls) -> str:
         """Return a description of what this proof step does."""
-        return "Mark kernel element as zero: (e∘k_e)(a) = 0"
+        return "⚬ Mark kernel element as zero: (e∘𝐤(e))(a) = 𝟎"
     
     @classmethod
     def is_applicable(cls, objects, arrows, scene=None) -> bool:
@@ -698,8 +784,8 @@ class KernelAtElementIsZeroProofStep(ProofStep):
         
         display_text = node.get_display_text()
         
-        # Check for pattern like "(e∘k_e)(a)" where element contains kernel composition
-        # Look for elements that have the pattern (e∘k_e)(something)
+        # Check for pattern like "(e∘𝐤(e))(a)" where element contains kernel composition
+        # Look for elements that have the pattern (e∘𝐤(e))(something)
         if ':' in display_text:
             elements_part = display_text.split(':', 1)[0]
             # Split by comma to handle multiple elements
@@ -713,10 +799,34 @@ class KernelAtElementIsZeroProofStep(ProofStep):
     
     @classmethod
     def _is_kernel_element_pattern(cls, element):
-        """Check if element matches kernel pattern (e∘k_e)(a)."""
-        # Look for pattern containing ∘k_ which indicates kernel composition
-        if '∘k_' in element and '(' in element and ')' in element:
-            return True
+        """Check if element matches strict kernel pattern (f∘𝐤(f))(a) where 𝐤(f) is kernel of f."""
+        # Look for pattern containing ∘𝐤( which indicates kernel composition
+        if '∘𝐤(' in element and '(' in element and ')' in element:
+            # Extract the composition part before the final (a)
+            last_paren = element.rfind('(')
+            if last_paren == -1:
+                return False
+                
+            composition_part = element[:last_paren]
+            
+            # Remove outer parentheses if present
+            if composition_part.startswith('(') and composition_part.endswith(')'):
+                composition_part = composition_part[1:-1]
+            
+            # Split by ∘ to get the functions
+            functions = [f.strip() for f in composition_part.split('∘')]
+            
+            # Check if we have exactly 2 functions and the pattern is f∘𝐤(f)
+            if len(functions) == 2:
+                f_function = functions[0]  # First function (e.g., "e")
+                kernel_function = functions[1]  # Second function (e.g., "𝐤(e)")
+                
+                # Check if kernel function has the form 𝐤(f) where f matches the first function
+                if kernel_function.startswith('𝐤(') and kernel_function.endswith(')'):
+                    inner_func = kernel_function[2:-1]  # Extract content between 𝐤( and )
+                    if inner_func == f_function:
+                        return True
+        
         return False
     
     @staticmethod
@@ -743,8 +853,8 @@ class KernelAtElementIsZeroProofStep(ProofStep):
             transformed_elements = []
             for element in elements:
                 if self._is_kernel_element_pattern(element):
-                    # Transform (e∘k_e)(a) to (e∘k_e)(a)=0
-                    transformed_elements.append(f"{element}=0")
+                    # Transform (e∘𝐤(e))(a) to (e∘𝐤(e))(a)=𝟎
+                    transformed_elements.append(f"{element}=𝟎")
                 else:
                     transformed_elements.append(element)
             
@@ -755,6 +865,755 @@ class KernelAtElementIsZeroProofStep(ProofStep):
             # Update the node
             self.node.set_text(new_display_text)
             self.node._base_name = self.original_base_name
+            
+            # Update connection points of all arrows connected to this node
+            self._update_connected_arrows()
+    
+    def _update_connected_arrows(self):
+        """Update connection points of all arrows connected to this node."""
+        if not self.node or not self.node.scene():
+            return
+        
+        # Find all arrows connected to this node
+        for item in self.node.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to the node
+                if item.get_source() == self.node or item.get_target() == self.node:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
+    
+    def unapply(self) -> None:
+        """Restore the original node text."""
+        if not self.node:
+            return
+            
+        # Restore original text and base name
+        if hasattr(self, 'original_text'):
+            self.node.set_text(self.original_text)
+        if hasattr(self, 'original_base_name'):
+            self.node._base_name = self.original_base_name
+
+
+class CompositionToApplicationProofStep(ProofStep):
+    """Proof step that converts composition notation to function application notation."""
+    
+    def __init__(self, scene, selected_objects, selected_arrows):
+        super().__init__(scene)
+        self.node = selected_objects[0] if selected_objects else None
+        self.selected_objects = selected_objects
+        self.selected_arrows = selected_arrows
+        self.original_text = None
+        self.original_base_name = None
+    
+    @classmethod
+    def get_name(cls) -> str:
+        """Return the human-readable name of this proof step."""
+        return "⚡ Composition to Application"
+    
+    @classmethod
+    def get_description(cls) -> str:
+        """Return a description of what this proof step does."""
+        return "⚡ Convert (c∘b)da to cbda when both forms exist"
+    
+    @classmethod
+    def is_applicable(cls, objects, arrows, scene=None) -> bool:
+        """Return True if exactly one object is selected and contains composition elements."""
+        if len(objects) != 1 or len(arrows) != 0:
+            return False
+        
+        node = objects[0]
+        if not hasattr(node, 'get_display_text'):
+            return False
+        
+        display_text = node.get_display_text()
+        
+        # Check if the node contains elements with composition notation
+        if ':' in display_text:
+            elements_part = display_text.split(':', 1)[0]
+            elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+            
+            # Look for composition elements like (c∘b)da and corresponding application cbda
+            for element in elements:
+                if cls._is_composition_element(element):
+                    flattened = cls._flatten_composition(element)
+                    if flattened != element:
+                        # Check if the flattened version exists in the same node
+                        for other_element in elements:
+                            if other_element == flattened:
+                                return True
+        
+        return False
+    
+    @classmethod
+    def _is_composition_element(cls, element):
+        """Check if element has composition notation like (c∘b)da."""
+        import re
+        # Look for pattern: (anything containing ∘)element
+        # This should handle nested parentheses like ((a∘b)∘c)d
+        if '∘' in element and '(' in element and ')' in element:
+            # Find the main parenthetical group at the start
+            paren_count = 0
+            composition_end = -1
+            for i, char in enumerate(element):
+                if char == '(':
+                    paren_count += 1
+                elif char == ')':
+                    paren_count -= 1
+                    if paren_count == 0:
+                        composition_end = i
+                        break
+            
+            # Check if we found a complete parenthetical group and there's content after it
+            if composition_end > 0 and composition_end < len(element) - 1:
+                composition_part = element[1:composition_end]  # Content inside first parentheses
+                if '∘' in composition_part:
+                    return True
+        
+        return False
+    
+    @classmethod
+    def _flatten_composition(cls, element):
+        """Convert (c∘b)da to cbda by flattening the composition."""
+        import re
+        
+        # Find the main parenthetical composition at the start
+        if not element.startswith('('):
+            return element
+            
+        paren_count = 0
+        composition_end = -1
+        for i, char in enumerate(element):
+            if char == '(':
+                paren_count += 1
+            elif char == ')':
+                paren_count -= 1
+                if paren_count == 0:
+                    composition_end = i
+                    break
+        
+        if composition_end == -1:
+            return element
+            
+        composition = element[1:composition_end]  # Content inside parentheses
+        remaining = element[composition_end + 1:]  # Content after parentheses
+        
+        # Recursively flatten nested compositions and remove all ∘ symbols and nested parentheses
+        def flatten_recursive(comp_str):
+            # Remove all parentheses and ∘ symbols
+            result = comp_str.replace('∘', '').replace('(', '').replace(')', '')
+            return result
+        
+        flattened_composition = flatten_recursive(composition)
+        
+        return f"{flattened_composition}{remaining}"
+    
+    @staticmethod
+    def button_text(objects, arrows) -> str:
+        """Get the text to display on the proof step button."""
+        return "Composition to Application"
+    
+    def apply(self) -> None:
+        """Convert composition notation to application notation."""
+        if not self.node:
+            return
+        
+        # Store original text for undo
+        self.original_text = self.node.get_display_text()
+        self.original_base_name = self.node.get_text()
+        
+        display_text = self.node.get_display_text()
+        
+        if ':' in display_text:
+            elements_part, base_part = display_text.split(':', 1)
+            elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+            
+            # Find composition-application pairs and convert them
+            new_elements = []
+            processed_elements = set()
+            
+            for element in elements:
+                if element in processed_elements:
+                    continue
+                
+                if self._is_composition_element(element):
+                    flattened = self._flatten_composition(element)
+                    
+                    # Check if flattened version exists
+                    if flattened in elements and flattened != element:
+                        # Create equality statement and mark both as processed
+                        equality = f"{element}={flattened}"
+                        new_elements.append(equality)
+                        processed_elements.add(element)
+                        processed_elements.add(flattened)
+                    else:
+                        # No corresponding flattened version, keep as is
+                        new_elements.append(element)
+                        processed_elements.add(element)
+                else:
+                    # Check if this is a flattened version of some composition
+                    found_composition = False
+                    for other_element in elements:
+                        if (other_element not in processed_elements and 
+                            self._is_composition_element(other_element) and
+                            self._flatten_composition(other_element) == element):
+                            # This element is the flattened version of other_element
+                            equality = f"{other_element}={element}"
+                            new_elements.append(equality)
+                            processed_elements.add(element)
+                            processed_elements.add(other_element)
+                            found_composition = True
+                            break
+                    
+                    if not found_composition:
+                        # No corresponding composition version, keep as is
+                        new_elements.append(element)
+                        processed_elements.add(element)
+            
+            # Reconstruct the display text
+            new_elements_part = ", ".join(new_elements)
+            new_display_text = f"{new_elements_part}:{base_part}"
+            
+            # Update the node
+            self.node.set_text(new_display_text)
+            self.node._base_name = self.original_base_name
+            
+            # Update connection points of all arrows connected to this node
+            self._update_connected_arrows()
+    
+    def _update_connected_arrows(self):
+        """Update connection points of all arrows connected to this node."""
+        if not self.node or not self.node.scene():
+            return
+        
+        # Find all arrows connected to this node
+        for item in self.node.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to the node
+                if item.get_source() == self.node or item.get_target() == self.node:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
+    
+    def unapply(self) -> None:
+        """Restore the original node text."""
+        if not self.node:
+            return
+            
+        # Restore original text and base name
+        if hasattr(self, 'original_text'):
+            self.node.set_text(self.original_text)
+        if hasattr(self, 'original_base_name'):
+            self.node._base_name = self.original_base_name
+
+        # Update connection points of all arrows connected to this node
+        self._update_connected_arrows()
+
+
+class ApplicationToKernelIsZeroProofStep(ProofStep):
+    """Proof step to mark applications to kernel as zero: g𝐤(g)a = 0."""
+    
+    def __init__(self, scene, selected_objects, selected_arrows):
+        super().__init__(scene)
+        self.node = selected_objects[0] if selected_objects else None
+        self.selected_objects = selected_objects
+        self.selected_arrows = selected_arrows
+        self.original_text = None
+        self.original_base_name = None
+    
+    @classmethod
+    def get_name(cls) -> str:
+        """Return the human-readable name of this proof step."""
+        return "⚬ Application to Kernel is Zero"
+    
+    @classmethod
+    def get_description(cls) -> str:
+        """Return a description of what this proof step does."""
+        return "⚬ Mark application to kernel as zero: g𝐤(g)a = 0"
+    
+    @classmethod
+    def is_applicable(cls, objects, arrows, scene=None) -> bool:
+        """Return True if exactly one object is selected and contains g𝐤(g) pattern."""
+        if len(objects) != 1 or len(arrows) != 0:
+            return False
+        
+        obj = objects[0]
+        if not hasattr(obj, 'get_display_text'):
+            return False
+        
+        display_text = obj.get_display_text()
+        
+        # Look for pattern g𝐤(g) where g can be any function name
+        return cls._contains_kernel_application_pattern(display_text)
+    
+    @classmethod
+    def _contains_kernel_application_pattern(cls, text):
+        """Check if text contains pattern like g𝐤(g) where g matches."""
+        import re
+        
+        # Pattern: any sequence (including Unicode Greek) followed by 𝐤( then same sequence then ) 
+        # This matches patterns like: f𝐤(f), abc𝐤(abc), α𝐤(α), etc.
+        pattern = r'([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)𝐤\(\1\)'
+        
+        return bool(re.search(pattern, text))
+    
+    @staticmethod
+    def button_text(objects, arrows) -> str:
+        """Get the text to display on the proof step button."""
+        if len(objects) == 1:
+            obj = objects[0]
+            display_text = obj.get_display_text()
+            
+            # Find and extract the kernel application pattern
+            import re
+            pattern = r'([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)𝐤\(\1\)'
+            match = re.search(pattern, display_text)
+            if match:
+                func_name = match.group(1)
+                return f"Mark {func_name}𝐤({func_name}) = 0"
+        
+        return "Application to Kernel is Zero"
+    
+    def apply(self) -> None:
+        """Mark kernel applications as zero."""
+        if not self.node:
+            return
+        
+        # Store original text for undo
+        self.original_text = self.node.get_display_text()
+        self.original_base_name = self.node.get_text()
+        
+        display_text = self.node.get_display_text()
+        
+        # Process the text to mark kernel applications as zero
+        new_text = self._mark_kernel_applications_as_zero(display_text)
+        
+        if new_text != display_text:
+            # Update the node with the new text
+            self.node.set_text(new_text)
+            
+            # Preserve base name if it exists
+            if ':' in new_text:
+                base_name = new_text.split(':', 1)[1].strip()
+                self.node._base_name = base_name
+            
+            # Update connection points
+            self._update_connected_arrows()
+    
+    def _mark_kernel_applications_as_zero(self, text):
+        """Transform text to mark kernel applications as zero."""
+        import re
+        
+        if ':' in text:
+            elements_part, base_part = text.split(':', 1)
+        else:
+            elements_part = text
+            base_part = text
+        
+        # Find all kernel application patterns and mark them as zero
+        # Pattern matches: f𝐤(f)α, g𝐤(g)xyz, etc. - now includes Unicode characters
+        pattern = r'([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)𝐤\(\1\)([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]*)'
+        
+        def replace_with_zero(match):
+            func_name = match.group(1)
+            element_part = match.group(2)
+            # Create the zero expression
+            if element_part:
+                return f"{func_name}𝐤({func_name}){element_part}=0"
+            else:
+                return f"{func_name}𝐤({func_name})=0"
+        
+        # Apply the transformation
+        new_elements_part = re.sub(pattern, replace_with_zero, elements_part)
+        
+        # Reconstruct the full text
+        if ':' in text:
+            return f"{new_elements_part}:{base_part}"
+        else:
+            return new_elements_part
+    
+    def _update_connected_arrows(self):
+        """Update connection points of all arrows connected to this node."""
+        if not self.node or not self.node.scene():
+            return
+        
+        # Find all arrows connected to this node
+        for item in self.node.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to the node
+                if item.get_source() == self.node or item.get_target() == self.node:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
+    
+    def unapply(self) -> None:
+        """Restore the original node text."""
+        if not self.node:
+            return
+            
+        # Restore original text and base name
+        if hasattr(self, 'original_text'):
+            self.node.set_text(self.original_text)
+        if hasattr(self, 'original_base_name'):
+            self.node._base_name = self.original_base_name
+
+        # Update connection points of all arrows connected to this node
+        self._update_connected_arrows()
+
+
+class CommutingPathsProofStep(ProofStep):
+    """Proof step to equate commuting paths: if cba and fga start from same element a, create cba=fga."""
+    
+    def __init__(self, scene, selected_objects, selected_arrows):
+        super().__init__(scene)
+        self.node = selected_objects[0] if selected_objects else None
+        self.selected_objects = selected_objects
+        self.selected_arrows = selected_arrows
+        self.original_text = None
+        self.original_base_name = None
+    
+    @classmethod
+    def get_name(cls) -> str:
+        """Return the human-readable name of this proof step."""
+        return "⚬ Equate Commuting Paths"
+    
+    @classmethod
+    def get_description(cls) -> str:
+        """Return a description of what this proof step does."""
+        return "⚬ Create equality between different paths from same element"
+    
+    @classmethod
+    def is_applicable(cls, objects, arrows, scene=None) -> bool:
+        """Return True if exactly one object with multiple paths from same element."""
+        if len(objects) != 1 or len(arrows) != 0:
+            return False
+        
+        obj = objects[0]
+        if not hasattr(obj, 'get_display_text'):
+            return False
+        
+        display_text = obj.get_display_text()
+        return cls._has_commuting_paths(display_text)
+    
+    @classmethod
+    def _has_commuting_paths(cls, text):
+        """Check if text has multiple composition/application paths from same element."""
+        if ':' not in text:
+            return False
+        
+        elements_part = text.split(':', 1)[0]
+        elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+        
+        # Group elements by their suffix (the element they're applied to)
+        suffix_groups = {}
+        
+        for element in elements:
+            # Extract the suffix (last character if it looks like function application)
+            suffix = cls._extract_element_suffix(element)
+            if suffix:
+                if suffix not in suffix_groups:
+                    suffix_groups[suffix] = []
+                suffix_groups[suffix].append(element)
+        
+        # Check if any suffix has multiple different paths
+        for suffix, paths in suffix_groups.items():
+            if len(paths) >= 2:
+                # Check if the paths are actually different (different prefixes)
+                prefixes = [cls._extract_path_prefix(path) for path in paths]
+                unique_prefixes = set(prefix for prefix in prefixes if prefix)
+                if len(unique_prefixes) >= 2:
+                    return True
+        
+        return False
+    
+    @classmethod
+    def _extract_element_suffix(cls, element):
+        """Extract the element suffix from a path like 'cba' -> 'a'."""
+        # Skip if it's an equality or has special characters
+        if '=' in element or '(' in element or '∘' in element:
+            return None
+        
+        # For simple alphanumeric strings, last char is the element
+        if element and element[-1].islower() and element[-1].isalpha():
+            return element[-1]
+        
+        return None
+    
+    @classmethod
+    def _extract_path_prefix(cls, path):
+        """Extract the function composition prefix from a path like 'cba' -> 'cb'."""
+        suffix = cls._extract_element_suffix(path)
+        if suffix and path.endswith(suffix):
+            return path[:-1]  # Everything except the last character
+        return None
+    
+    @staticmethod
+    def button_text(objects, arrows) -> str:
+        """Get the text to display on the proof step button."""
+        if len(objects) == 1:
+            obj = objects[0]
+            display_text = obj.get_display_text()
+            
+            # Find commuting paths and show example
+            if ':' in display_text:
+                elements_part = display_text.split(':', 1)[0]
+                elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+                
+                # Find first pair of commuting paths
+                suffix_groups = {}
+                for element in elements:
+                    suffix = CommutingPathsProofStep._extract_element_suffix(element)
+                    if suffix:
+                        if suffix not in suffix_groups:
+                            suffix_groups[suffix] = []
+                        suffix_groups[suffix].append(element)
+                
+                for suffix, paths in suffix_groups.items():
+                    if len(paths) >= 2:
+                        return f"Equate paths to {suffix}: {paths[0]}={paths[1]}"
+        
+        return "Equate Commuting Paths"
+    
+    def apply(self) -> None:
+        """Create equalities between commuting paths."""
+        if not self.node:
+            return
+        
+        # Store original text for undo
+        self.original_text = self.node.get_display_text()
+        self.original_base_name = self.node.get_text()
+        
+        display_text = self.node.get_display_text()
+        new_text = self._create_path_equalities(display_text)
+        
+        if new_text != display_text:
+            # Update the node with the new text
+            self.node.set_text(new_text)
+            
+            # Preserve base name if it exists
+            if ':' in new_text:
+                base_name = new_text.split(':', 1)[1].strip()
+                self.node._base_name = base_name
+            
+            # Update connection points
+            self._update_connected_arrows()
+    
+    def _create_path_equalities(self, text):
+        """Transform text to create equalities between commuting paths."""
+        if ':' not in text:
+            return text
+        
+        elements_part, base_part = text.split(':', 1)
+        elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+        
+        # Group elements by their suffix
+        suffix_groups = {}
+        remaining_elements = []
+        
+        for element in elements:
+            suffix = self._extract_element_suffix(element)
+            if suffix:
+                if suffix not in suffix_groups:
+                    suffix_groups[suffix] = []
+                suffix_groups[suffix].append(element)
+            else:
+                remaining_elements.append(element)
+        
+        # Create equalities for each suffix group
+        new_elements = remaining_elements.copy()
+        
+        for suffix, paths in suffix_groups.items():
+            if len(paths) >= 2:
+                # Create equality: path1=path2=...
+                equality = '='.join(paths)
+                new_elements.append(equality)
+            else:
+                # Single path, keep as is
+                new_elements.extend(paths)
+        
+        # Reconstruct the text
+        new_elements_part = ','.join(new_elements)
+        return f"{new_elements_part}:{base_part}"
+    
+    def _update_connected_arrows(self):
+        """Update connection points of all arrows connected to this node."""
+        if not self.node or not self.node.scene():
+            return
+        
+        # Find all arrows connected to this node
+        for item in self.node.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to the node
+                if item.get_source() == self.node or item.get_target() == self.node:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
+    
+    def unapply(self) -> None:
+        """Restore the original node text."""
+        if not self.node:
+            return
+            
+        # Restore original text and base name
+        if hasattr(self, 'original_text'):
+            self.node.set_text(self.original_text)
+        if hasattr(self, 'original_base_name'):
+            self.node._base_name = self.original_base_name
+
+        # Update connection points of all arrows connected to this node
+        self._update_connected_arrows()
+
+
+class CommutesProofStep(ProofStep):
+    """Proof step to combine two composition paths into equality: f∘g∘...(a) = h∘i∘...(a)."""
+    
+    def __init__(self, scene, selected_objects, selected_arrows):
+        super().__init__(scene)
+        self.node = selected_objects[0] if selected_objects else None
+        self.selected_objects = selected_objects
+        self.selected_arrows = selected_arrows
+        self.original_text = None
+        self.original_base_name = None
+        self.path1 = None
+        self.path2 = None
+        self.common_element = None
+    
+    @classmethod
+    def get_name(cls) -> str:
+        """Return the human-readable name of this proof step."""
+        return "🔄 Commutes"
+    
+    @classmethod
+    def get_description(cls) -> str:
+        """Return a description of what this proof step does."""
+        return "🔄 Combine two composition paths into equality"
+    
+    @classmethod
+    def is_applicable(cls, objects, arrows, scene=None) -> bool:
+        """Return True if exactly one object is selected with two composition paths to same element."""
+        if len(objects) != 1 or len(arrows) != 0:
+            return False
+        
+        node = objects[0]
+        if not hasattr(node, 'get_display_text'):
+            return False
+        
+        display_text = node.get_display_text()
+        
+        # Check for two elements that are compositions ending with the same base element
+        if ':' in display_text:
+            elements_part = display_text.split(':', 1)[0]
+            elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+            
+            if len(elements) == 2:
+                # Check if both elements are composition paths to the same base element
+                path1_info = cls._parse_composition_path(elements[0])
+                path2_info = cls._parse_composition_path(elements[1])
+                
+                if (path1_info and path2_info and 
+                    path1_info['base_element'] == path2_info['base_element'] and
+                    path1_info['base_element'] is not None):
+                    return True
+        
+        return False
+    
+    @classmethod
+    def _parse_composition_path(cls, element):
+        """Parse a composition path to extract composition and base element."""
+        # Handle patterns like "f(a)", "(g∘f)(a)", "(h∘g∘f)(a)"
+        if '(' not in element or ')' not in element:
+            return None
+        
+        # Find the base element (after the last opening parenthesis)
+        last_paren = element.rfind('(')
+        if last_paren == -1:
+            return None
+        
+        base_element = element[last_paren+1:element.rfind(')')]
+        composition_part = element[:last_paren]
+        
+        # Remove outer parentheses if present for multi-function composition
+        if composition_part.startswith('(') and composition_part.endswith(')'):
+            composition_part = composition_part[1:-1]
+        
+        return {
+            'composition': composition_part,
+            'base_element': base_element,
+            'full_path': element
+        }
+    
+    @staticmethod
+    def button_text(objects, arrows) -> str:
+        """Get the text to display on the proof step button."""
+        if len(objects) == 1:
+            node = objects[0]
+            display_text = node.get_display_text()
+            
+            if ':' in display_text:
+                elements_part = display_text.split(':', 1)[0]
+                elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+                
+                if len(elements) == 2:
+                    path1_info = CommutesProofStep._parse_composition_path(elements[0])
+                    path2_info = CommutesProofStep._parse_composition_path(elements[1])
+                    
+                    if path1_info and path2_info:
+                        base_elem = path1_info['base_element']
+                        comp1 = path1_info['composition']
+                        comp2 = path2_info['composition']
+                        return f"Commutes so {comp1}({base_elem}) = {comp2}({base_elem})"
+        
+        return "Commutes"
+    
+    def apply(self) -> None:
+        """Combine two composition paths into equality."""
+        if not self.node:
+            return
+        
+        # Store original text for undo
+        self.original_text = self.node.get_display_text()
+        self.original_base_name = self.node.get_text()
+        
+        display_text = self.node.get_display_text()
+        
+        if ':' in display_text:
+            elements_part, base_part = display_text.split(':', 1)
+            elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+            
+            if len(elements) == 2:
+                path1_info = self._parse_composition_path(elements[0])
+                path2_info = self._parse_composition_path(elements[1])
+                
+                if path1_info and path2_info and path1_info['base_element'] == path2_info['base_element']:
+                    # Create equality statement
+                    equality = f"{path1_info['full_path']}={path2_info['full_path']}"
+                    new_display_text = f"{equality}:{base_part}"
+                    
+                    # Update the node
+                    self.node.set_text(new_display_text)
+                    self.node._base_name = self.original_base_name
+                    
+                    # Update connection points of all arrows connected to this node
+                    self._update_connected_arrows()
+    
+    def _update_connected_arrows(self):
+        """Update connection points of all arrows connected to this node."""
+        if not self.node or not self.node.scene():
+            return
+        
+        # Find all arrows connected to this node
+        for item in self.node.scene().items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target'):
+                # Check if this arrow is connected to the node
+                if item.get_source() == self.node or item.get_target() == self.node:
+                    item.update_position()
+        
+        # Check and adjust grid spacing if auto-spacing is enabled
+        self._check_auto_grid_spacing()
     
     def unapply(self) -> None:
         """Restore the original node text."""

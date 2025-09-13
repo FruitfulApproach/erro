@@ -1,299 +1,273 @@
 {
   "version": "1.0",
-  "timestamp": "20250912_174540",
+  "timestamp": "20250912_193853",
   "windows": [
     {
       "tab_name": "ℬ",
       "scene_data": {
         "objects": [
           {
-            "id": 2384827006832,
-            "text": "𝒦ℯ𝓇 c",
-            "position": {
-              "x": 300.0,
-              "y": -150.0
-            },
-            "size": {
-              "width": 70.0,
-              "height": 41.0
-            }
-          },
-          {
-            "id": 2384827006672,
-            "text": "𝒦ℯ𝓇 e",
-            "position": {
-              "x": 150.0,
-              "y": -150.0
-            },
-            "size": {
-              "width": 86.0,
-              "height": 41.0
-            }
-          },
-          {
-            "id": 2384827002992,
-            "text": "0",
-            "position": {
-              "x": -150.0,
-              "y": 150.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827002832,
-            "text": "0",
-            "position": {
-              "x": 450.0,
-              "y": 150.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827002672,
-            "text": "0",
-            "position": {
-              "x": 450.0,
-              "y": 0.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827001712,
-            "text": "F",
-            "position": {
-              "x": 300.0,
-              "y": 150.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827002512,
-            "text": "E",
-            "position": {
-              "x": 150.0,
-              "y": 150.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827002352,
-            "text": "D",
-            "position": {
-              "x": 0.0,
-              "y": 150.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827002192,
-            "text": "C",
-            "position": {
-              "x": 300.0,
-              "y": 0.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827002032,
-            "text": "B",
-            "position": {
-              "x": 150.0,
-              "y": 0.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827001872,
-            "text": "0",
-            "position": {
-              "x": -150.0,
-              "y": 0.0
-            },
-            "size": {
-              "width": 37.0,
-              "height": 37.0
-            }
-          },
-          {
-            "id": 2384827000912,
+            "id": 2559007248048,
             "text": "A",
             "position": {
               "x": 0.0,
               "y": 0.0
             },
             "size": {
-              "width": 37.0,
-              "height": 37.0
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007247888,
+            "text": "0",
+            "position": {
+              "x": -300.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007247728,
+            "text": "B",
+            "position": {
+              "x": 300.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007247568,
+            "text": "D",
+            "position": {
+              "x": 0.0,
+              "y": 300.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007247408,
+            "text": "E",
+            "position": {
+              "x": 300.0,
+              "y": 300.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007247248,
+            "text": "F",
+            "position": {
+              "x": 600.0,
+              "y": 300.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007246288,
+            "text": "0",
+            "position": {
+              "x": 900.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007247088,
+            "text": "0",
+            "position": {
+              "x": 900.0,
+              "y": 300.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007246928,
+            "text": "0",
+            "position": {
+              "x": -300.0,
+              "y": 300.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007246768,
+            "text": "𝒦ℯ𝓇 c",
+            "position": {
+              "x": 600.0,
+              "y": -300.0
+            },
+            "size": {
+              "width": 80.0,
+              "height": 46.0
+            }
+          },
+          {
+            "id": 2559007246608,
+            "text": "𝒦ℯ𝓇 e",
+            "position": {
+              "x": 300.0,
+              "y": -300.0
+            },
+            "size": {
+              "width": 80.0,
+              "height": 46.0
+            }
+          },
+          {
+            "id": 2559007246448,
+            "text": "C",
+            "position": {
+              "x": 600.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
+            }
+          },
+          {
+            "id": 2559007245488,
+            "text": "G",
+            "position": {
+              "x": 0.0,
+              "y": -1200.0
+            },
+            "size": {
+              "width": 41.0,
+              "height": 41.0
             }
           }
         ],
         "arrows": [
           {
-            "id": 2384827187600,
-            "source_id": 2384827006832,
-            "target_id": 2384827002192,
-            "text": "k_c",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827006352,
-            "source_id": 2384827006672,
-            "target_id": 2384827002032,
-            "text": "k_e",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827004912,
-            "source_id": 2384827002992,
-            "target_id": 2384827002352,
+            "id": 2559007250288,
+            "source_id": 2559007247888,
+            "target_id": 2559007248048,
             "text": "0",
             "color": "#000000"
           },
           {
-            "id": 2384827004752,
-            "source_id": 2384827001712,
-            "target_id": 2384827002832,
-            "text": "0",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827004592,
-            "source_id": 2384827002192,
-            "target_id": 2384827002672,
-            "text": "0",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827004432,
-            "source_id": 2384827002352,
-            "target_id": 2384827002512,
-            "text": "g",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827004272,
-            "source_id": 2384827002512,
-            "target_id": 2384827001712,
-            "text": "f",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827004112,
-            "source_id": 2384827002032,
-            "target_id": 2384827002512,
-            "text": "e",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827003952,
-            "source_id": 2384827000912,
-            "target_id": 2384827002352,
-            "text": "d",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827003792,
-            "source_id": 2384827002192,
-            "target_id": 2384827001712,
-            "text": "c",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827003632,
-            "source_id": 2384827002032,
-            "target_id": 2384827002192,
-            "text": "b",
-            "color": "#000000"
-          },
-          {
-            "id": 2384827003472,
-            "source_id": 2384827000912,
-            "target_id": 2384827002032,
+            "id": 2559007250128,
+            "source_id": 2559007248048,
+            "target_id": 2559007247728,
             "text": "a",
             "color": "#000000"
           },
           {
-            "id": 2384827003152,
-            "source_id": 2384827001872,
-            "target_id": 2384827000912,
+            "id": 2559007249968,
+            "source_id": 2559007248048,
+            "target_id": 2559007247568,
+            "text": "d",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007249808,
+            "source_id": 2559007247728,
+            "target_id": 2559007247408,
+            "text": "e",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007249648,
+            "source_id": 2559007247408,
+            "target_id": 2559007247248,
+            "text": "f",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007249488,
+            "source_id": 2559007247568,
+            "target_id": 2559007247408,
+            "text": "g",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007249328,
+            "source_id": 2559007247248,
+            "target_id": 2559007247088,
             "text": "0",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007249168,
+            "source_id": 2559007246928,
+            "target_id": 2559007247568,
+            "text": "0",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007249008,
+            "source_id": 2559007246608,
+            "target_id": 2559007247728,
+            "text": "k_e",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007248848,
+            "source_id": 2559007246768,
+            "target_id": 2559007246448,
+            "text": "k_c",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007248688,
+            "source_id": 2559007246448,
+            "target_id": 2559007246288,
+            "text": "0",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007248528,
+            "source_id": 2559007246448,
+            "target_id": 2559007247248,
+            "text": "c",
+            "color": "#000000"
+          },
+          {
+            "id": 2559007248208,
+            "source_id": 2559007247728,
+            "target_id": 2559007246448,
+            "text": "b",
             "color": "#000000"
           }
         ],
         "scene_rect": {
-          "x": -2000.0,
-          "y": -2000.0,
-          "width": 4000.0,
-          "height": 4000.0
+          "x": -320.5,
+          "y": -1220.5,
+          "width": 1241.0,
+          "height": 1541.0
         }
       }
     }
   ],
   "undo_stack": {
-    "commands": [
-      {
-        "type": "ProofStepCommand",
-        "text": "Apply TakeKernelProofStep",
-        "data": {
-          "proof_step_type": "TakeKernelProofStep",
-          "tab_index": 0,
-          "proof_step_data": {}
-        }
-      },
-      {
-        "type": "MoveObject",
-        "text": "Move Object '𝒦ℯ𝓇 e'",
-        "data": {}
-      },
-      {
-        "type": "ProofStepCommand",
-        "text": "Apply TakeKernelProofStep",
-        "data": {
-          "proof_step_type": "TakeKernelProofStep",
-          "tab_index": 0,
-          "proof_step_data": {}
-        }
-      },
-      {
-        "type": "MoveObject",
-        "text": "Move Object '𝒦ℯ𝓇 c'",
-        "data": {}
-      },
-      {
-        "type": "ProofStepCommand",
-        "text": "Apply TakeElementProofStep",
-        "data": {
-          "proof_step_type": "TakeElementProofStep",
-          "tab_index": 0,
-          "proof_step_data": {}
-        }
-      }
-    ],
+    "commands": [],
     "clean_index": 0,
-    "current_index": 5
+    "current_index": 0
   }
 }

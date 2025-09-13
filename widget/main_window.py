@@ -56,6 +56,7 @@ class MainWindow(QMainWindow):
             'grid_color': QColor(200, 200, 200),
             'grid_width': 1.0,
             'snap_to_grid': True,
+            'auto_grid_spacing': True,
             
             # Objects
             'obj_border_color': QColor(0, 0, 0),
@@ -191,39 +192,39 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         
         # File menu
-        file_menu = menubar.addMenu("&File")
+        file_menu = menubar.addMenu("📁 &File")
         
-        new_action = QAction("&New", self)
+        new_action = QAction("📄 &New", self)
         new_action.setShortcut(QKeySequence.StandardKey.New)
         new_action.triggered.connect(self.new_diagram)
         file_menu.addAction(new_action)
         
         file_menu.addSeparator()
         
-        open_action = QAction("&Open...", self)
+        open_action = QAction("📂 &Open...", self)
         open_action.setShortcut(QKeySequence.StandardKey.Open)
         open_action.triggered.connect(self.open_file)
         file_menu.addAction(open_action)
         
-        save_action = QAction("&Save", self)
+        save_action = QAction("💾 &Save", self)
         save_action.setShortcut(QKeySequence.StandardKey.Save)
         save_action.triggered.connect(self.save_file)
         file_menu.addAction(save_action)
         
-        save_as_action = QAction("Save &As...", self)
+        save_as_action = QAction("💾 Save &As...", self)
         save_as_action.setShortcut(QKeySequence.StandardKey.SaveAs)
         save_as_action.triggered.connect(self.save_file_as)
         file_menu.addAction(save_as_action)
         
         file_menu.addSeparator()
         
-        exit_action = QAction("E&xit", self)
+        exit_action = QAction("🚪 E&xit", self)
         exit_action.setShortcut(QKeySequence.StandardKey.Quit)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
         # Edit menu
-        edit_menu = menubar.addMenu("&Edit")
+        edit_menu = menubar.addMenu("✏️ &Edit")
         
         # Get the global undo stack
         from PyQt6.QtWidgets import QApplication
@@ -231,12 +232,12 @@ class MainWindow(QMainWindow):
         undo_stack = app.undo_stack
         
         # Add undo action
-        undo_action = undo_stack.createUndoAction(self, "&Undo")
+        undo_action = undo_stack.createUndoAction(self, "↶ &Undo")
         undo_action.setShortcut(QKeySequence.StandardKey.Undo)
         edit_menu.addAction(undo_action)
         
         # Add redo action
-        redo_action = undo_stack.createRedoAction(self, "&Redo")
+        redo_action = undo_stack.createRedoAction(self, "↷ &Redo")
         redo_action.setShortcut(QKeySequence.StandardKey.Redo)
         edit_menu.addAction(redo_action)
         
@@ -244,103 +245,104 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         
         # Add delete action
-        delete_action = QAction("&Delete", self)
+        delete_action = QAction("🗑️ &Delete", self)
         delete_action.setShortcut(QKeySequence.StandardKey.Delete)
         delete_action.triggered.connect(self.delete_selected_items)
         edit_menu.addAction(delete_action)
         
         # Diagram menu
-        diagram_menu = menubar.addMenu("&Diagram")
+        diagram_menu = menubar.addMenu("📊 &Diagram")
         
-        new_diagram_action = QAction("&New Diagram", self)
+        new_diagram_action = QAction("➕ &New Diagram", self)
         new_diagram_action.setShortcut("Ctrl+Shift+N")
         new_diagram_action.triggered.connect(self.create_new_diagram)
         diagram_menu.addAction(new_diagram_action)
         
         diagram_menu.addSeparator()
         
-        settings_action = QAction("&Settings...", self)
+        settings_action = QAction("⚙️ &Settings...", self)
         settings_action.setShortcut("Ctrl+,")
         # Add gear icon if available
         try:
-            settings_action.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_FileDialogDetailedView))
+            # Try to use a more appropriate settings-related icon
+            settings_action.setIcon(self.style().standardIcon(self.style().StandardPixmap.SP_ComputerIcon))
         except:
             pass  # If icon not available, just use text
         settings_action.triggered.connect(self.show_diagram_settings)
         diagram_menu.addAction(settings_action)
         
         # View menu
-        view_menu = menubar.addMenu("&View")
+        view_menu = menubar.addMenu("👁️ &View")
         
-        zoom_in_action = QAction("Zoom &In", self)
+        zoom_in_action = QAction("🔍+ Zoom &In", self)
         zoom_in_action.setShortcut(QKeySequence.StandardKey.ZoomIn)
         zoom_in_action.triggered.connect(self.zoom_in)
         view_menu.addAction(zoom_in_action)
         
-        zoom_out_action = QAction("Zoom &Out", self)
+        zoom_out_action = QAction("🔍- Zoom &Out", self)
         zoom_out_action.setShortcut(QKeySequence.StandardKey.ZoomOut)
         zoom_out_action.triggered.connect(self.zoom_out)
         view_menu.addAction(zoom_out_action)
         
-        reset_zoom_action = QAction("&Reset Zoom", self)
+        reset_zoom_action = QAction("🎯 &Reset Zoom", self)
         reset_zoom_action.setShortcut("Ctrl+0")
         reset_zoom_action.triggered.connect(self.reset_zoom)
         view_menu.addAction(reset_zoom_action)
         
         view_menu.addSeparator()
         
-        fit_all_action = QAction("&Fit All", self)
+        fit_all_action = QAction("📐 &Fit All", self)
         fit_all_action.setShortcut("Ctrl+F")
         fit_all_action.triggered.connect(self.fit_in_view_all)
         view_menu.addAction(fit_all_action)
         
         # Proof menu
-        proof_menu = menubar.addMenu("&Proof")
+        proof_menu = menubar.addMenu("🔍 &Proof")
         
         # Toggle for proof step buttons - default unchecked
-        self.proof_buttons_action = QAction("Proof Step &Buttons", self)
+        self.proof_buttons_action = QAction("🔘 Proof Step &Buttons", self)
         self.proof_buttons_action.setCheckable(True)
         self.proof_buttons_action.setChecked(False)  # Default unchecked
         self.proof_buttons_action.triggered.connect(self.toggle_proof_buttons)
         proof_menu.addAction(self.proof_buttons_action)
         
         # Help menu
-        help_menu = menubar.addMenu("&Help")
+        help_menu = menubar.addMenu("❓ &Help")
         
-        about_action = QAction("&About", self)
+        about_action = QAction("ℹ️ &About", self)
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
         
     def create_toolbar(self):
         """Create the toolbar."""
-        toolbar = QToolBar("Main Toolbar", self)
+        toolbar = QToolBar("🔧 Main Toolbar", self)
         toolbar.setObjectName("MainToolbar")  # Set object name to avoid warning
         self.addToolBar(toolbar)
         
         # New diagram button
-        new_btn = QPushButton("New", self)
+        new_btn = QPushButton("📄 New", self)
         new_btn.clicked.connect(self.create_new_diagram)
         toolbar.addWidget(new_btn)
         
         toolbar.addSeparator()
         
         # Zoom buttons
-        zoom_in_btn = QPushButton("Zoom In", self)
+        zoom_in_btn = QPushButton("🔍+ Zoom In", self)
         zoom_in_btn.clicked.connect(self.zoom_in)
         toolbar.addWidget(zoom_in_btn)
         
-        zoom_out_btn = QPushButton("Zoom Out", self)
+        zoom_out_btn = QPushButton("🔍- Zoom Out", self)
         zoom_out_btn.clicked.connect(self.zoom_out)
         toolbar.addWidget(zoom_out_btn)
         
-        reset_zoom_btn = QPushButton("Reset Zoom", self)
+        reset_zoom_btn = QPushButton("🎯 Reset Zoom", self)
         reset_zoom_btn.clicked.connect(self.reset_zoom)
         toolbar.addWidget(reset_zoom_btn)
         
         toolbar.addSeparator()
         
         # Fit all button
-        fit_all_btn = QPushButton("Fit All", self)
+        fit_all_btn = QPushButton("📐 Fit All", self)
         fit_all_btn.clicked.connect(self.fit_in_view_all)
         toolbar.addWidget(fit_all_btn)
         
@@ -357,7 +359,7 @@ class MainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.coordinates_label)
         
         # Initial message
-        self.status_bar.showMessage("Ready. Double-click canvas for objects, objects for arrows. Right-click for options and labels.")
+        self.status_bar.showMessage("✅ Ready. Double-click canvas for objects 📦, objects for arrows ➡️. Right-click for options and labels.")
         
     def new_diagram(self):
         """Create a new diagram (for backward compatibility)."""
@@ -423,11 +425,11 @@ class MainWindow(QMainWindow):
         if current_scene:
             object_count = len([item for item in current_scene.items() 
                                if hasattr(item, 'get_text')])
-            self.status_bar.showMessage(f"Object added. Total objects: {object_count}")
+            self.status_bar.showMessage(f"📦 Object added. Total objects: {object_count}")
     
     def show_diagram_settings(self):
         """Show the diagram settings dialog."""
-        from ..dialog.diagram_settings_dialog import DiagramSettingsDialog
+        from dialog.diagram_settings_dialog import DiagramSettingsDialog
         
         dialog = DiagramSettingsDialog(self)
         dialog.set_settings(self.diagram_settings)
@@ -440,7 +442,7 @@ class MainWindow(QMainWindow):
             self.apply_settings_to_current_diagram()
             
             # Update status
-            self.status_bar.showMessage("Diagram settings updated.")
+            self.status_bar.showMessage("⚙️ Diagram settings updated.")
     
     def apply_settings_to_current_diagram(self):
         """Apply current settings to the active diagram."""
@@ -450,9 +452,19 @@ class MainWindow(QMainWindow):
         if not current_scene or not current_view:
             return
         
+        # Handle grid spacing changes with position scaling
+        old_grid_spacing = getattr(current_scene, '_grid_size', 150)
+        new_grid_spacing = self.diagram_settings['grid_spacing']
+        
+        if old_grid_spacing != new_grid_spacing:
+            # Calculate scale factor and apply scaling
+            scale_factor = new_grid_spacing / old_grid_spacing if old_grid_spacing > 0 else 1.0
+            if abs(scale_factor - 1.0) > 0.01:  # Only scale if change is significant
+                self._scale_scene_positions(current_scene, scale_factor)
+        
         # Apply grid settings
         if hasattr(current_scene, '_grid_size'):
-            current_scene._grid_size = self.diagram_settings['grid_spacing']
+            current_scene._grid_size = new_grid_spacing
         if hasattr(current_scene, '_grid_enabled'):
             current_scene._grid_enabled = self.diagram_settings['show_grid']
         
@@ -476,9 +488,89 @@ class MainWindow(QMainWindow):
         # Apply background color
         scene.setBackgroundBrush(self.diagram_settings['bg_color'])
         
+    def check_and_adjust_grid_spacing(self, modified_node=None):
+        """Check arrow lengths and adjust grid spacing if auto-spacing is enabled."""
+        if not self.diagram_settings.get('auto_grid_spacing', False):
+            return  # Auto-spacing is disabled
+        
+        current_scene = self.get_current_scene()
+        if not current_scene:
+            return
+        
+        # Collect all arrows in the scene
+        arrows = []
+        for item in current_scene.items():
+            if hasattr(item, 'get_source') and hasattr(item, 'get_target') and hasattr(item, 'get_length'):
+                arrows.append(item)
+        
+        if not arrows:
+            return  # No arrows to check
+        
+        # Calculate arrow lengths
+        arrow_lengths = [arrow.get_length() for arrow in arrows]
+        current_grid_spacing = self.diagram_settings['grid_spacing']
+        
+        # Check if any arrow is 50 or less - double the grid spacing
+        min_length = min(arrow_lengths)
+        if min_length <= 50:
+            new_spacing = min(current_grid_spacing * 2, 500)  # Cap at 500px
+            if new_spacing != current_grid_spacing:
+                self._update_grid_spacing(new_spacing)
+                self.status_bar.showMessage(f"📏⬆️ Auto-doubled grid spacing to {new_spacing}px (shortest arrow: {min_length:.1f}px)")
+                return
+        
+        # Check if all arrows are 80% or more of grid spacing - half the spacing
+        threshold_length = current_grid_spacing * 0.8
+        if all(length >= threshold_length for length in arrow_lengths):
+            new_spacing = max(current_grid_spacing // 2, 50)  # Floor at 50px
+            if new_spacing != current_grid_spacing:
+                self._update_grid_spacing(new_spacing)
+                self.status_bar.showMessage(f"📏⬇️ Auto-halved grid spacing to {new_spacing}px (all arrows ≥ {threshold_length:.1f}px)")
+    
+    def _update_grid_spacing(self, new_spacing):
+        """Update grid spacing setting and apply to current diagram."""
+        current_scene = self.get_current_scene()
+        if not current_scene:
+            return
+            
+        # Get the current grid spacing for scaling calculation
+        old_spacing = self.diagram_settings['grid_spacing']
+        scale_factor = new_spacing / old_spacing if old_spacing > 0 else 1.0
+        
+        # Update the setting
+        self.diagram_settings['grid_spacing'] = new_spacing
+        
+        # Scale all object and arrow positions if there's a significant change
+        if abs(scale_factor - 1.0) > 0.01:  # Only scale if change is significant
+            self._scale_scene_positions(current_scene, scale_factor)
+        
+        # Apply to current scene
+        if hasattr(current_scene, '_grid_size'):
+            current_scene._grid_size = new_spacing
+            current_scene.update()
+    
+    def _scale_scene_positions(self, scene, scale_factor):
+        """Scale all object and arrow positions in the scene by the given factor."""
+        if not scene:
+            return
+            
+        # Scale all objects
+        for item in scene.items():
+            if hasattr(item, 'pos') and hasattr(item, 'setPos'):
+                # Scale object positions
+                current_pos = item.pos()
+                new_pos = current_pos * scale_factor
+                item.setPos(new_pos)
+                
+                # If it's an arrow, also update its internal position tracking
+                if hasattr(item, 'update_position'):
+                    item.update_position()
+        
+        # Update scene rect to accommodate scaled positions
+        scene.setSceneRect(scene.itemsBoundingRect())
+        
         # Update the scene
         scene.update()
-        view.update()
         
     def show_about(self):
         """Show about dialog."""
@@ -538,11 +630,11 @@ class MainWindow(QMainWindow):
             if hasattr(item, 'get_text'):
                 item_name = item.get_text()
                 item_type = "Object" if hasattr(item, 'boundingRect') and item.type() == 65537 else "Arrow"
-                self.status_bar.showMessage(f"Deleted {item_type} '{item_name}'.")
+                self.status_bar.showMessage(f"🗑️ Deleted {item_type} '{item_name}'.")
             else:
-                self.status_bar.showMessage("Deleted item.")
+                self.status_bar.showMessage("🗑️ Deleted item.")
         else:
-            self.status_bar.showMessage(f"Deleted {len(deletable_items)} items.")
+            self.status_bar.showMessage(f"🗑️ Deleted {len(deletable_items)} items.")
         
     def closeEvent(self, event):
         """Handle application close event."""

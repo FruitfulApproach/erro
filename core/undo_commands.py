@@ -78,6 +78,54 @@ class RenameArrow(QUndoCommand):
         self.arrow.set_base_name(self.old_name)
 
 
+class GlobalRename(QUndoCommand):
+    """Command to globally rename all occurrences of a name throughout the diagram."""
+    
+    def __init__(self, scene, old_name, new_name):
+        super().__init__(f"Global Rename '{old_name}' to '{new_name}'")
+        self.scene = scene
+        self.old_name = old_name
+        self.new_name = new_name
+        self.changes = []  # Store all changes for undo
+    
+    def redo(self):
+        """Execute the global rename."""
+        self.changes.clear()
+        
+        if not self.scene:
+            return
+        
+        # Iterate through all items in the scene
+        for item in self.scene.items():
+            if hasattr(item, 'get_display_text') and hasattr(item, 'set_text'):
+                # This is an object or arrow with text
+                current_text = item.get_display_text()
+                new_text = current_text.replace(self.old_name, self.new_name)
+                
+                if new_text != current_text:
+                    # Store the change for undo
+                    self.changes.append((item, current_text))
+                    # Apply the change
+                    item.set_text(new_text)
+                    
+                    # Also update base name if it matches
+                    if hasattr(item, 'get_text') and item.get_text() == self.old_name:
+                        if hasattr(item, '_base_name'):
+                            item._base_name = self.new_name
+    
+    def undo(self):
+        """Undo the global rename."""
+        # Restore all changed texts
+        for item, original_text in self.changes:
+            if hasattr(item, 'set_text'):
+                item.set_text(original_text)
+                
+                # Also restore base name if needed
+                if hasattr(item, 'get_text') and item.get_text() == self.new_name:
+                    if hasattr(item, '_base_name'):
+                        item._base_name = self.old_name
+
+
 class MoveObject(QUndoCommand):
     """Command to move an object node."""
     

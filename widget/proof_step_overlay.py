@@ -152,21 +152,21 @@ class ProofStepOverlay(QWidget):
     
     def _get_available_proof_step_classes(self):
         """Get list of available proof step classes."""
-        from core.proof_step import IdentityProofStep, CompositionProofStep, CancelIdentityProofStep, TakeKernelProofStep, TakeElementProofStep, MapElementProofStep, KernelAtElementIsZeroProofStep
+        from core.proof_step import IdentityProofStep, CompositionProofStep, CancelIdentityProofStep, TakeKernelProofStep, TakeElementProofStep, MapElementProofStep, KernelAtElementIsZeroProofStep, CommutesProofStep, CompositionToApplicationProofStep, ApplicationToKernelIsZeroProofStep, CommutingPathsProofStep
         
         # Base proof steps
-        proof_steps = [IdentityProofStep, CompositionProofStep, CancelIdentityProofStep]
+        proof_steps = [IdentityProofStep, CompositionProofStep, CancelIdentityProofStep, CommutesProofStep, CompositionToApplicationProofStep, CommutingPathsProofStep]
         
         # Add abelian category specific proof steps
         if self.diagram_view.scene() and self.diagram_view.scene().is_abelian_category:
             proof_steps.append(TakeKernelProofStep)
-            proof_steps.append(KernelAtElementIsZeroProofStep)  # Available in abelian categories
+            proof_steps.append(KernelAtElementIsZeroProofStep)
+            proof_steps.append(ApplicationToKernelIsZeroProofStep)  # Add the new proof step
         
         # Add concrete category specific proof steps
         if self.diagram_view.scene() and self.diagram_view.scene().is_concrete_category:
             proof_steps.append(TakeElementProofStep)
             proof_steps.append(MapElementProofStep)
-            proof_steps.append(KernelAtElementIsZeroProofStep)  # Also available in concrete categories
         
         return proof_steps
     

@@ -48,7 +48,7 @@ class DiagramSettingsDialog(QDialog):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Diagram Settings")
+        self.setWindowTitle("⚙️ Diagram Settings")
         self.setModal(True)
         self.resize(500, 400)
         
@@ -72,19 +72,19 @@ class DiagramSettingsDialog(QDialog):
         button_layout = QHBoxLayout()
         
         # Reset button
-        reset_button = QPushButton("Reset to Defaults")
+        reset_button = QPushButton("🔄 Reset to Defaults")
         reset_button.clicked.connect(self.reset_to_defaults)
         button_layout.addWidget(reset_button)
         
         button_layout.addStretch()
         
         # OK and Cancel buttons
-        ok_button = QPushButton("OK")
+        ok_button = QPushButton("✅ OK")
         ok_button.clicked.connect(self.accept)
         ok_button.setDefault(True)
         button_layout.addWidget(ok_button)
         
-        cancel_button = QPushButton("Cancel")
+        cancel_button = QPushButton("❌ Cancel")
         cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(cancel_button)
         
@@ -130,7 +130,7 @@ class DiagramSettingsDialog(QDialog):
         layout.addWidget(text_group)
         layout.addStretch()
         
-        self.tab_widget.addTab(tab, "Appearance")
+        self.tab_widget.addTab(tab, "🎨 Appearance")
     
     def create_grid_tab(self):
         """Create the Grid settings tab."""
@@ -176,9 +176,24 @@ class DiagramSettingsDialog(QDialog):
         snap_layout.addRow("", self.snap_to_grid_check)
         
         layout.addWidget(snap_group)
+        
+        # Auto-grid spacing group
+        auto_spacing_group = QGroupBox("Automatic Grid Spacing")
+        auto_spacing_layout = QFormLayout(auto_spacing_group)
+        
+        # Auto-adjust grid spacing
+        self.auto_grid_spacing_check = QCheckBox("Auto-adjust Grid Spacing")
+        self.auto_grid_spacing_check.setToolTip(
+            "Automatically adjust grid spacing based on arrow lengths:\n"
+            "• Double spacing when arrows ≤ 50px\n"
+            "• Half spacing when arrows ≥ 80% of grid spacing"
+        )
+        auto_spacing_layout.addRow("", self.auto_grid_spacing_check)
+        
+        layout.addWidget(auto_spacing_group)
         layout.addStretch()
         
-        self.tab_widget.addTab(tab, "Grid")
+        self.tab_widget.addTab(tab, "🔲 Grid")
     
     def create_objects_tab(self):
         """Create the Objects settings tab."""
@@ -242,7 +257,7 @@ class DiagramSettingsDialog(QDialog):
         layout.addWidget(size_group)
         layout.addStretch()
         
-        self.tab_widget.addTab(tab, "Objects")
+        self.tab_widget.addTab(tab, "📦 Objects")
     
     def create_arrows_tab(self):
         """Create the Arrows settings tab."""
@@ -308,7 +323,7 @@ class DiagramSettingsDialog(QDialog):
         layout.addWidget(curve_group)
         layout.addStretch()
         
-        self.tab_widget.addTab(tab, "Arrows")
+        self.tab_widget.addTab(tab, "➡️ Arrows")
     
     def load_current_settings(self):
         """Load current settings from the application."""
@@ -363,6 +378,7 @@ class DiagramSettingsDialog(QDialog):
             'grid_color': self.grid_color_button.get_color(),
             'grid_width': self.grid_width_spin.value(),
             'snap_to_grid': self.snap_to_grid_check.isChecked(),
+            'auto_grid_spacing': self.auto_grid_spacing_check.isChecked(),
             
             # Objects
             'obj_border_color': self.obj_border_color_button.get_color(),
@@ -405,6 +421,8 @@ class DiagramSettingsDialog(QDialog):
             self.grid_width_spin.setValue(settings['grid_width'])
         if 'snap_to_grid' in settings:
             self.snap_to_grid_check.setChecked(settings['snap_to_grid'])
+        if 'auto_grid_spacing' in settings:
+            self.auto_grid_spacing_check.setChecked(settings['auto_grid_spacing'])
         
         # Objects
         if 'obj_border_color' in settings:

@@ -92,9 +92,9 @@ class Arrow(Node):
         """Set up signal connections based on arrow text content."""
         self._signal_cleanup()  # Clean up any existing connections
         
-        # Check for identity arrows (1_X pattern)
+        # Check for identity arrows (𝟏(X) pattern)
         import re
-        identity_matches = re.findall(r'1_([^∘\s]+)', self._text)
+        identity_matches = re.findall(r'𝟏\(([^)∘\s]+)\)', self._text)
         for node_name in identity_matches:
             # Find the node with this name in the scene
             if self.scene():
@@ -111,7 +111,7 @@ class Arrow(Node):
             # Find all component arrow names in the composition
             components = [comp.strip() for comp in self._text.split('∘')]
             for comp_name in components:
-                if comp_name and not comp_name.startswith('1_'):  # Skip identities
+                if comp_name and not comp_name.startswith('𝟏('):  # Skip identities
                     # Find arrows with this text in the scene
                     if self.scene():
                         for item in self.scene().items():
@@ -135,7 +135,7 @@ class Arrow(Node):
     def _update_identity_text(self, new_name):
         """Update identity references when node names change."""
         import re
-        # Replace all instances of 1_oldname with 1_newname
+        # Replace all instances of 𝟏(oldname) with 𝟏(newname)
         # This is a bit tricky since we need to find which node changed
         sender = self.sender()
         if sender and hasattr(sender, 'get_text'):
@@ -155,7 +155,7 @@ class Arrow(Node):
         new_text = self._text
         
         # Find all identity patterns and update them with current node names
-        identity_matches = re.findall(r'1_([^∘\s]+)', self._text)
+        identity_matches = re.findall(r'𝟏\(([^)∘\s]+)\)', self._text)
         for old_node_name in identity_matches:
             # Find if there's a node that was previously named this
             if self.scene():
@@ -164,7 +164,7 @@ class Arrow(Node):
                         hasattr(item, 'name_changed')):
                         current_name = item.get_text()
                         # Replace the identity reference
-                        new_text = re.sub(f'1_{re.escape(old_node_name)}', f'1_{current_name}', new_text)
+                        new_text = re.sub(f'𝟏\\({re.escape(old_node_name)}\\)', f'𝟏({current_name})', new_text)
                         break
         
         if new_text != self._text:
@@ -1376,7 +1376,7 @@ class Arrow(Node):
     
     def is_kernel_arrow(self):
         """Check if this arrow is a kernel arrow based on its name."""
-        return self._is_kernel_arrow or self._text.startswith("k_")
+        return self._is_kernel_arrow or self._text.startswith("𝐤(")
     
     def set_as_kernel_arrow(self):
         """Mark this arrow as a kernel arrow and automatically set it as inclusion."""
@@ -1417,24 +1417,34 @@ class Arrow(Node):
         """Get the target node of the arrow."""
         return self._end_node
     
+    def get_length(self):
+        """Get the length of the arrow in pixels."""
+        if not self._start_point or not self._end_point:
+            return 0.0
+        
+        # Calculate Euclidean distance between start and end points
+        dx = self._end_point.x() - self._start_point.x()
+        dy = self._end_point.y() - self._start_point.y()
+        return math.sqrt(dx * dx + dy * dy)
+    
     def contextMenuEvent(self, event):
         """Handle right-click context menu."""
         menu = QMenu()
         
         # Add "Edit Name" action
-        edit_name_action = QAction("Edit Name", menu)
+        edit_name_action = QAction("✏️ Edit Name", menu)
         edit_name_action.triggered.connect(self.edit_name)
         menu.addAction(edit_name_action)
         
         # Add "Hide Label" toggle action
-        hide_label_action = QAction("Hide Label", menu)
+        hide_label_action = QAction("👁️‍🗨️ Hide Label", menu)
         hide_label_action.setCheckable(True)
         hide_label_action.setChecked(self._label_manually_hidden)
         hide_label_action.triggered.connect(self.toggle_label_visibility)
         menu.addAction(hide_label_action)
         
         # Add "Flip Arrow" action
-        flip_action = QAction("Flip Arrow", menu)
+        flip_action = QAction("🔄 Flip Arrow", menu)
         flip_action.triggered.connect(self.flip_arrow)
         menu.addAction(flip_action)
         
@@ -1442,7 +1452,7 @@ class Arrow(Node):
         menu.addSeparator()
         
         # Add "There Exists" toggle action
-        there_exists_action = QAction("There Exists", menu)
+        there_exists_action = QAction("∃ There Exists", menu)
         there_exists_action.setCheckable(True)
         there_exists_action.setChecked(self._there_exists)
         there_exists_action.triggered.connect(self.toggle_there_exists)
@@ -1454,19 +1464,19 @@ class Arrow(Node):
         # Different menu options for kernel arrows vs regular arrows
         if self.is_kernel_arrow():
             # For kernel arrows, only show Inclusion (checked and disabled), Isomorphism, and Epimorphism
-            inclusion_action = QAction("Inclusion", menu)
+            inclusion_action = QAction("🔗 Inclusion", menu)
             inclusion_action.setCheckable(True)
             inclusion_action.setChecked(True)  # Always checked for kernel arrows
             inclusion_action.setEnabled(False)  # Disabled - cannot be changed
             menu.addAction(inclusion_action)
             
-            isomorphism_action = QAction("Isomorphism", menu)
+            isomorphism_action = QAction("↔️ Isomorphism", menu)
             isomorphism_action.setCheckable(True)
             isomorphism_action.setChecked(self._is_isomorphism)
             isomorphism_action.triggered.connect(self.toggle_isomorphism)
             menu.addAction(isomorphism_action)
             
-            epimorphism_action = QAction("Epimorphism", menu)
+            epimorphism_action = QAction("⤠ Epimorphism", menu)
             epimorphism_action.setCheckable(True)
             epimorphism_action.setChecked(self._is_epimorphism)
             epimorphism_action.triggered.connect(self.toggle_epimorphism)
@@ -1474,31 +1484,31 @@ class Arrow(Node):
             
         else:
             # For regular arrows, show all arrow style toggles
-            inclusion_action = QAction("Inclusion", menu)
+            inclusion_action = QAction("🔗 Inclusion", menu)
             inclusion_action.setCheckable(True)
             inclusion_action.setChecked(self._is_inclusion)
             inclusion_action.triggered.connect(self.toggle_inclusion)
             menu.addAction(inclusion_action)
             
-            monomorphism_action = QAction("Monomorphism", menu)
+            monomorphism_action = QAction("↪️ Monomorphism", menu)
             monomorphism_action.setCheckable(True)
             monomorphism_action.setChecked(self._is_monomorphism)
             monomorphism_action.triggered.connect(self.toggle_monomorphism)
             menu.addAction(monomorphism_action)
             
-            epimorphism_action = QAction("Epimorphism", menu)
+            epimorphism_action = QAction("⤠ Epimorphism", menu)
             epimorphism_action.setCheckable(True)
             epimorphism_action.setChecked(self._is_epimorphism)
             epimorphism_action.triggered.connect(self.toggle_epimorphism)
             menu.addAction(epimorphism_action)
             
-            isomorphism_action = QAction("Isomorphism", menu)
+            isomorphism_action = QAction("↔️ Isomorphism", menu)
             isomorphism_action.setCheckable(True)
             isomorphism_action.setChecked(self._is_isomorphism)
             isomorphism_action.triggered.connect(self.toggle_isomorphism)
             menu.addAction(isomorphism_action)
             
-            general_action = QAction("General Arrow", menu)
+            general_action = QAction("➡️ General Arrow", menu)
             general_action.setCheckable(True)
             general_action.setChecked(self._is_general)
             general_action.triggered.connect(self.toggle_general)
@@ -1508,7 +1518,7 @@ class Arrow(Node):
         menu.addSeparator()
         
         # Add "Delete" action
-        delete_action = QAction("Delete", menu)
+        delete_action = QAction("🗑️ Delete", menu)
         delete_action.triggered.connect(self.delete_arrow)
         menu.addAction(delete_action)
         
@@ -1525,8 +1535,14 @@ class Arrow(Node):
         if dialog.exec() == dialog.DialogCode.Accepted:
             new_name = dialog.get_name()
             if new_name and new_name != self._text:  # Compare with base text
-                # Create and push undo command
-                command = RenameArrow(self, self._text, new_name)
+                if dialog.get_global_rename():
+                    # Global rename - replace all occurrences in the diagram
+                    from core.undo_commands import GlobalRename
+                    command = GlobalRename(self.scene(), self._text, new_name)
+                else:
+                    # Regular rename - just this arrow
+                    command = RenameArrow(self, self._text, new_name)
+                
                 app = QApplication.instance()
                 app.undo_stack.push(command)
     
