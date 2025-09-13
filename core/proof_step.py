@@ -1264,6 +1264,270 @@ class ApplicationToKernelIsZeroProofStep(ProofStep):
         self._update_connected_arrows()
 
 
+class KernelDefinitionProofStep(ProofStep):
+    """Proof step to move elements to kernel based on fx=0: if fx=0 then x âˆˆ Ker f."""
+    
+    def __init__(self, scene, selected_objects, selected_arrows):
+        super().__init__(scene)
+        self.node = selected_objects[0] if selected_objects else None
+        self.selected_objects = selected_objects
+        self.selected_arrows = selected_arrows
+        self.original_text = None
+        self.original_base_name = None
+        self.kernel_node = None
+        self.created_kernel_node = False
+        self.function_name = None
+        self.element_name = None
+    
+    @classmethod
+    def get_name(cls) -> str:
+        """Return the human-readable name of this proof step."""
+        return "âš¬ Apply Kernel Definition"
+    
+    @classmethod
+    def get_description(cls) -> str:
+        """Return a description of what this proof step does."""
+        return "âš¬ Move element to kernel: if fx=0 then x âˆˆ Ker f"
+    
+    @classmethod
+    def is_applicable(cls, objects, arrows, scene=None) -> bool:
+        """Return True if exactly one object contains fx=0 pattern."""
+        if len(objects) != 1 or len(arrows) != 0:
+            return False
+        
+        obj = objects[0]
+        if not hasattr(obj, 'get_display_text'):
+            return False
+        
+        display_text = obj.get_display_text()
+        return cls._contains_kernel_definition_pattern(display_text)
+    
+    @classmethod
+    def _contains_kernel_definition_pattern(cls, text):
+        """Check if text contains pattern like fx=0 where f is function and x is element."""
+        import re
+        
+        # Pattern: function_name + element + =0
+        # Matches: fa=0, gÎ±=0, hxyz=0, etc.
+        pattern = r'([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)=0'
+        
+        return bool(re.search(pattern, text))
+    
+    @classmethod
+    def _extract_kernel_definition_info(cls, text):
+        """Extract function name and element from fx=0 pattern."""
+        import re
+        
+        pattern = r'([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)([a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]+)=0'
+        match = re.search(pattern, text)
+        
+        if match:
+            # For now, assume first character is function, rest is element
+            full_expr = match.group(0)[:-2]  # Remove =0
+            if len(full_expr) >= 2:
+                function_name = full_expr[0]  # First character as function
+                element_name = full_expr[1:]   # Rest as element
+                return function_name, element_name
+        
+        return None, None
+    
+    @staticmethod
+    def button_text(objects, arrows) -> str:
+        """Get the text to display on the proof step button."""
+        if len(objects) == 1:
+            obj = objects[0]
+            display_text = obj.get_display_text()
+            
+            func, elem = KernelDefinitionProofStep._extract_kernel_definition_info(display_text)
+            if func and elem:
+                return f"Move {elem} to Ker {func}"
+        
+        return "Apply Kernel Definition"
+    
+    def apply(self) -> None:
+        """Apply kernel definition: move element from fx=0 to Ker f."""
+        if not self.node:
+            return
+        
+        # Store original text for undo
+        self.original_text = self.node.get_display_text()
+        self.original_base_name = self.node.get_text()
+        
+        # Extract function and element from fx=0 pattern
+        display_text = self.node.get_display_text()
+        self.function_name, self.element_name = self._extract_kernel_definition_info(display_text)
+        
+        if not self.function_name or not self.element_name:
+            return
+        
+        # Find or create kernel node
+        kernel_node_name = f"Ker {self.function_name}"
+        self.kernel_node = self._find_kernel_node(kernel_node_name)
+        
+        if not self.kernel_node:
+            # Create kernel node if it doesn't exist
+            self.kernel_node = self._create_kernel_node(kernel_node_name)
+            self.created_kernel_node = True
+        
+        # Remove fx=0 from original node and add x to kernel node
+        self._remove_zero_element_from_node()
+        self._add_element_to_kernel_node()
+        
+        # Blink the kernel node blue to show what happened
+        self._blink_node_blue(self.kernel_node)
+    
+    def _find_kernel_node(self, kernel_name):
+        """Find existing kernel node in the scene."""
+        if not self.scene:
+            return None
+        
+        for item in self.scene.items():
+            if (hasattr(item, 'get_text') and not hasattr(item, 'get_source') and 
+                hasattr(item, 'get_display_text')):
+                # This is a node, check if it's the kernel we want
+                display_text = item.get_display_text()
+                if ':' in display_text:
+                    base_name = display_text.split(':', 1)[1].strip()
+                else:
+                    base_name = display_text.strip()
+                
+                if base_name == kernel_name:
+                    return item
+        
+        return None
+    
+    def _create_kernel_node(self, kernel_name):
+        """Create a new kernel node."""
+        from widget.object_node import Object
+        
+        # Create kernel node
+        kernel_node = Object(kernel_name)
+        
+        # Position it near the original node
+        original_pos = self.node.pos()
+        kernel_node.setPos(original_pos.x(), original_pos.y() + 150)  # Below original
+        
+        # Add to scene
+        self.scene.addItem(kernel_node)
+        
+        return kernel_node
+    
+    def _remove_zero_element_from_node(self):
+        """Remove the fx=0 element from the original node."""
+        display_text = self.node.get_display_text()
+        
+        if ':' in display_text:
+            elements_part, base_part = display_text.split(':', 1)
+            elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+            
+            # Remove the fx=0 element
+            zero_pattern = f"{self.function_name}{self.element_name}=0"
+            elements = [elem for elem in elements if elem != zero_pattern]
+            
+            # Reconstruct the text
+            if elements:
+                new_text = f"{','.join(elements)}:{base_part}"
+            else:
+                new_text = base_part  # Only base name if no elements left
+            
+            self.node.set_text(new_text)
+    
+    def _add_element_to_kernel_node(self):
+        """Add the element x to the Ker f node."""
+        current_text = self.kernel_node.get_display_text()
+        
+        if ':' in current_text:
+            # Kernel node already has elements
+            elements_part, base_part = current_text.split(':', 1)
+            existing_elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+            
+            # Add the new element if not already present
+            if self.element_name not in existing_elements:
+                existing_elements.append(self.element_name)
+                new_text = f"{','.join(existing_elements)}:{base_part}"
+            else:
+                new_text = current_text  # Element already exists
+        else:
+            # Kernel node has no elements yet
+            base_name = current_text.strip()
+            new_text = f"{self.element_name}:{base_name}"
+        
+        self.kernel_node.set_text(new_text)
+        
+        # Preserve base name
+        if ':' in new_text:
+            base_name = new_text.split(':', 1)[1].strip()
+            self.kernel_node._base_name = base_name
+    
+    def _blink_node_blue(self, node):
+        """Make the node blink blue once to indicate the change."""
+        from PyQt6.QtCore import QTimer
+        from PyQt6.QtGui import QColor, QPen, QBrush
+        
+        if not node:
+            return
+        
+        # Store original colors
+        original_pen = node._pen if hasattr(node, '_pen') else None
+        original_brush = node._brush if hasattr(node, '_brush') else None
+        
+        # Set blue highlighting
+        blue_pen = QPen(QColor(0, 100, 255), 3)  # Blue border
+        blue_brush = QBrush(QColor(173, 216, 230, 100))  # Light blue fill
+        
+        node._pen = blue_pen
+        node._brush = blue_brush
+        node.update()
+        
+        # Timer to restore original colors after 1 second
+        def restore_colors():
+            if original_pen:
+                node._pen = original_pen
+            if original_brush:
+                node._brush = original_brush
+            node.update()
+        
+        timer = QTimer()
+        timer.timeout.connect(restore_colors)
+        timer.setSingleShot(True)
+        timer.start(1000)  # 1 second
+    
+    def unapply(self) -> None:
+        """Undo the kernel definition application."""
+        if not self.node:
+            return
+        
+        # Restore original text and base name to the source node
+        if hasattr(self, 'original_text'):
+            self.node.set_text(self.original_text)
+        if hasattr(self, 'original_base_name'):
+            self.node._base_name = self.original_base_name
+        
+        # Remove element from kernel node or delete kernel node if we created it
+        if self.kernel_node and self.element_name:
+            if self.created_kernel_node:
+                # We created the kernel node, so remove it entirely
+                if self.kernel_node.scene():
+                    self.kernel_node.scene().removeItem(self.kernel_node)
+            else:
+                # Remove just the element we added
+                current_text = self.kernel_node.get_display_text()
+                if ':' in current_text:
+                    elements_part, base_part = current_text.split(':', 1)
+                    elements = [elem.strip() for elem in elements_part.split(',') if elem.strip()]
+                    
+                    # Remove our element
+                    elements = [elem for elem in elements if elem != self.element_name]
+                    
+                    # Reconstruct kernel node text
+                    if elements:
+                        new_kernel_text = f"{','.join(elements)}:{base_part}"
+                    else:
+                        new_kernel_text = base_part  # Only base name if no elements left
+                    
+                    self.kernel_node.set_text(new_kernel_text)
+
+
 class CommutingPathsProofStep(ProofStep):
     """Proof step to equate commuting paths: if cba and fga start from same element a, create cba=fga."""
     
@@ -1625,3 +1889,214 @@ class CommutesProofStep(ProofStep):
             self.node.set_text(self.original_text)
         if hasattr(self, 'original_base_name'):
             self.node._base_name = self.original_base_name
+ 
+ 
+ c l a s s   S i m p l i f y I n c l u s i o n P r o o f S t e p ( P r o o f S t e p ) : 
+         " " " P r o o f   s t e p   t o   s i m p l i f y   i n c l u s i o n   a p p l i c a t i o n s :   f a : X   ’!  a : X   w h e n   f   i s   a n   i n c l u s i o n . " " " 
+         
+         d e f   _ _ i n i t _ _ ( s e l f ,   s c e n e ,   s e l e c t e d _ o b j e c t s ,   s e l e c t e d _ a r r o w s ) : 
+                 s u p e r ( ) . _ _ i n i t _ _ ( s c e n e ) 
+                 s e l f . n o d e   =   s e l e c t e d _ o b j e c t s [ 0 ]   i f   s e l e c t e d _ o b j e c t s   e l s e   N o n e 
+                 s e l f . s e l e c t e d _ o b j e c t s   =   s e l e c t e d _ o b j e c t s 
+                 s e l f . s e l e c t e d _ a r r o w s   =   s e l e c t e d _ a r r o w s 
+                 s e l f . o r i g i n a l _ t e x t   =   N o n e 
+                 s e l f . o r i g i n a l _ b a s e _ n a m e   =   N o n e 
+                 s e l f . i n c l u s i o n s _ f o u n d   =   [ ] 
+         
+         @ c l a s s m e t h o d 
+         d e f   g e t _ n a m e ( c l s )   - >   s t r : 
+                 " " " R e t u r n   t h e   h u m a n - r e a d a b l e   n a m e   o f   t h i s   p r o o f   s t e p . " " " 
+                 r e t u r n   " ª!  S i m p l i f y   I n c l u s i o n " 
+         
+         @ c l a s s m e t h o d 
+         d e f   g e t _ d e s c r i p t i o n ( c l s )   - >   s t r : 
+                 " " " R e t u r n   a   d e s c r i p t i o n   o f   w h a t   t h i s   p r o o f   s t e p   d o e s . " " " 
+                 r e t u r n   " ª!  R e m o v e   i n c l u s i o n   f u n c t i o n   f r o m   e l e m e n t s :   f a : X   ’!  a : X " 
+         
+         @ c l a s s m e t h o d 
+         d e f   i s _ a p p l i c a b l e ( c l s ,   o b j e c t s ,   a r r o w s ,   s c e n e = N o n e )   - >   b o o l : 
+                 " " " R e t u r n   T r u e   i f   e x a c t l y   o n e   o b j e c t   i s   s e l e c t e d   t h a t   c o n t a i n s   i n c l u s i o n   a p p l i c a t i o n s . " " " 
+                 i f   l e n ( o b j e c t s )   ! =   1   o r   l e n ( a r r o w s )   ! =   0 : 
+                         r e t u r n   F a l s e 
+                 
+                 n o d e   =   o b j e c t s [ 0 ] 
+                 i f   n o t   h a s a t t r ( n o d e ,   " g e t _ d i s p l a y _ t e x t " )   o r   n o t   s c e n e : 
+                         r e t u r n   F a l s e 
+                 
+                 d i s p l a y _ t e x t   =   n o d e . g e t _ d i s p l a y _ t e x t ( ) 
+                 
+                 #   F i n d   a l l   a r r o w s   i n   t h e   s c e n e   t o   c h e c k   f o r   i n c l u s i o n s 
+                 a r r o w s _ i n _ s c e n e   =   [ i t e m   f o r   i t e m   i n   s c e n e . i t e m s ( )   
+                                                     i f   h a s a t t r ( i t e m ,   " g e t _ s o u r c e " )   a n d   h a s a t t r ( i t e m ,   " g e t _ t a r g e t " )   
+                                                     a n d   h a s a t t r ( i t e m ,   " _ i s _ i n c l u s i o n " ) ] 
+                 
+                 #   G e t   i n c l u s i o n   f u n c t i o n   n a m e s 
+                 i n c l u s i o n _ f u n c t i o n s   =   [ ] 
+                 f o r   a r r o w   i n   a r r o w s _ i n _ s c e n e : 
+                         i f   a r r o w . _ i s _ i n c l u s i o n   a n d   h a s a t t r ( a r r o w ,   " g e t _ t e x t " ) : 
+                                 a r r o w _ t e x t   =   a r r o w . g e t _ t e x t ( ) . s t r i p ( ) 
+                                 i f   a r r o w _ t e x t :     #   N o n - e m p t y   a r r o w   l a b e l 
+                                         i n c l u s i o n _ f u n c t i o n s . a p p e n d ( a r r o w _ t e x t ) 
+                 
+                 i f   n o t   i n c l u s i o n _ f u n c t i o n s : 
+                         r e t u r n   F a l s e 
+                 
+                 #   C h e c k   i f   t h e   n o d e ' s   t e x t   c o n t a i n s   a n y   p a t t e r n s   l i k e   " f a : X "   w h e r e   f   i s   a n   i n c l u s i o n 
+                 r e t u r n   c l s . _ c o n t a i n s _ i n c l u s i o n _ a p p l i c a t i o n s ( d i s p l a y _ t e x t ,   i n c l u s i o n _ f u n c t i o n s ) 
+         
+         @ c l a s s m e t h o d 
+         d e f   _ c o n t a i n s _ i n c l u s i o n _ a p p l i c a t i o n s ( c l s ,   t e x t ,   i n c l u s i o n _ f u n c t i o n s ) : 
+                 " " " C h e c k   i f   t e x t   c o n t a i n s   p a t t e r n s   l i k e   ' f a : X '   w h e r e   f   i s   a n   i n c l u s i o n   f u n c t i o n . " " " 
+                 i m p o r t   r e 
+                 
+                 f o r   f u n c _ n a m e   i n   i n c l u s i o n _ f u n c t i o n s : 
+                         #   E s c a p e   f u n c t i o n   n a m e   f o r   r e g e x 
+                         e s c a p e d _ f u n c   =   r e . e s c a p e ( f u n c _ n a m e ) 
+                         
+                         #   P a t t e r n :   f u n c t i o n   n a m e   f o l l o w e d   b y   e l e m e n t ( s )   f o l l o w e d   b y   c o l o n 
+                         #   T h i s   c a p t u r e s   p a t t e r n s   l i k e   " f a : " ,   " f ±²: " ,   " f 1 2 3 : " ,   e t c . 
+                         p a t t e r n   =   r f " { e s c a p e d _ f u n c } ( [ a - z A - Z ±- É‘- ©\ u 0 3 7 0 - \ u 0 3 F F \ u 1 F 0 0 - \ u 1 F F F 0 - 9 ] + ) : " 
+                         
+                         i f   r e . s e a r c h ( p a t t e r n ,   t e x t ) : 
+                                 r e t u r n   T r u e 
+                 
+                 r e t u r n   F a l s e 
+         
+         @ c l a s s m e t h o d 
+         d e f   _ f i n d _ i n c l u s i o n _ a p p l i c a t i o n s ( c l s ,   t e x t ,   i n c l u s i o n _ f u n c t i o n s ) : 
+                 " " " F i n d   a l l   i n c l u s i o n   a p p l i c a t i o n s   i n   t h e   t e x t   a n d   r e t u r n   r e p l a c e m e n t   i n f o . " " " 
+                 i m p o r t   r e 
+                 
+                 a p p l i c a t i o n s   =   [ ] 
+                 
+                 f o r   f u n c _ n a m e   i n   i n c l u s i o n _ f u n c t i o n s : 
+                         #   E s c a p e   f u n c t i o n   n a m e   f o r   r e g e x 
+                         e s c a p e d _ f u n c   =   r e . e s c a p e ( f u n c _ n a m e ) 
+                         
+                         #   P a t t e r n :   f u n c t i o n   n a m e   f o l l o w e d   b y   e l e m e n t ( s )   f o l l o w e d   b y   c o l o n 
+                         p a t t e r n   =   r f " { e s c a p e d _ f u n c } ( [ a - z A - Z ±- É‘- ©\ u 0 3 7 0 - \ u 0 3 F F \ u 1 F 0 0 - \ u 1 F F F 0 - 9 ] + ) : " 
+                         
+                         f o r   m a t c h   i n   r e . f i n d i t e r ( p a t t e r n ,   t e x t ) : 
+                                 f u l l _ m a t c h   =   m a t c h . g r o u p ( 0 )     #   e . g . ,   " f a : " 
+                                 e l e m e n t   =   m a t c h . g r o u p ( 1 )           #   e . g . ,   " a " 
+                                 r e p l a c e m e n t   =   f " { e l e m e n t } : "     #   e . g . ,   " a : " 
+                                 
+                                 a p p l i c a t i o n s . a p p e n d ( { 
+                                         " o r i g i n a l " :   f u l l _ m a t c h , 
+                                         " r e p l a c e m e n t " :   r e p l a c e m e n t , 
+                                         " f u n c t i o n " :   f u n c _ n a m e , 
+                                         " e l e m e n t " :   e l e m e n t , 
+                                         " s t a r t " :   m a t c h . s t a r t ( ) , 
+                                         " e n d " :   m a t c h . e n d ( ) 
+                                 } ) 
+                 
+                 r e t u r n   a p p l i c a t i o n s 
+         
+         @ s t a t i c m e t h o d 
+         d e f   b u t t o n _ t e x t ( o b j e c t s ,   a r r o w s )   - >   s t r : 
+                 " " " G e t   t h e   t e x t   t o   d i s p l a y   o n   t h e   p r o o f   s t e p   b u t t o n . " " " 
+                 i f   l e n ( o b j e c t s )   = =   1 : 
+                         n o d e   =   o b j e c t s [ 0 ] 
+                         i f   h a s a t t r ( n o d e ,   " s c e n e " )   a n d   n o d e . s c e n e ( ) : 
+                                 s c e n e   =   n o d e . s c e n e ( ) 
+                                 d i s p l a y _ t e x t   =   n o d e . g e t _ d i s p l a y _ t e x t ( ) 
+                                 
+                                 #   F i n d   i n c l u s i o n   f u n c t i o n s 
+                                 a r r o w s _ i n _ s c e n e   =   [ i t e m   f o r   i t e m   i n   s c e n e . i t e m s ( )   
+                                                                     i f   h a s a t t r ( i t e m ,   " g e t _ s o u r c e " )   a n d   h a s a t t r ( i t e m ,   " g e t _ t a r g e t " )   
+                                                                     a n d   h a s a t t r ( i t e m ,   " _ i s _ i n c l u s i o n " ) ] 
+                                 
+                                 i n c l u s i o n _ f u n c t i o n s   =   [ ] 
+                                 f o r   a r r o w   i n   a r r o w s _ i n _ s c e n e : 
+                                         i f   a r r o w . _ i s _ i n c l u s i o n   a n d   h a s a t t r ( a r r o w ,   " g e t _ t e x t " ) : 
+                                                 a r r o w _ t e x t   =   a r r o w . g e t _ t e x t ( ) . s t r i p ( ) 
+                                                 i f   a r r o w _ t e x t : 
+                                                         i n c l u s i o n _ f u n c t i o n s . a p p e n d ( a r r o w _ t e x t ) 
+                                 
+                                 #   F i n d   a p p l i c a t i o n s   t o   s h o w   i n   b u t t o n 
+                                 a p p l i c a t i o n s   =   S i m p l i f y I n c l u s i o n P r o o f S t e p . _ f i n d _ i n c l u s i o n _ a p p l i c a t i o n s ( d i s p l a y _ t e x t ,   i n c l u s i o n _ f u n c t i o n s ) 
+                                 
+                                 i f   a p p l i c a t i o n s : 
+                                         i f   l e n ( a p p l i c a t i o n s )   = =   1 : 
+                                                 a p p   =   a p p l i c a t i o n s [ 0 ] 
+                                                 r e t u r n   f " R e m o v e   i n c l u s i o n   { a p p [ \ " f u n c t i o n \ " ] } :   { a p p [ \ " f u n c t i o n \ " ] } { a p p [ \ " e l e m e n t \ " ] }   ’!  { a p p [ \ " e l e m e n t \ " ] } " 
+                                         e l s e : 
+                                                 r e t u r n   f " S i m p l i f y   { l e n ( a p p l i c a t i o n s ) }   i n c l u s i o n s " 
+                 
+                 r e t u r n   " S i m p l i f y   I n c l u s i o n " 
+         
+         d e f   a p p l y ( s e l f )   - >   N o n e : 
+                 " " " R e m o v e   i n c l u s i o n   f u n c t i o n s   f r o m   e l e m e n t s . " " " 
+                 i f   n o t   s e l f . n o d e   o r   n o t   s e l f . n o d e . s c e n e ( ) : 
+                         r e t u r n 
+                 
+                 #   S t o r e   o r i g i n a l   t e x t   f o r   u n d o 
+                 s e l f . o r i g i n a l _ t e x t   =   s e l f . n o d e . g e t _ d i s p l a y _ t e x t ( ) 
+                 s e l f . o r i g i n a l _ b a s e _ n a m e   =   s e l f . n o d e . g e t _ t e x t ( ) 
+                 
+                 s c e n e   =   s e l f . n o d e . s c e n e ( ) 
+                 d i s p l a y _ t e x t   =   s e l f . n o d e . g e t _ d i s p l a y _ t e x t ( ) 
+                 
+                 #   F i n d   i n c l u s i o n   f u n c t i o n s 
+                 a r r o w s _ i n _ s c e n e   =   [ i t e m   f o r   i t e m   i n   s c e n e . i t e m s ( )   
+                                                     i f   h a s a t t r ( i t e m ,   " g e t _ s o u r c e " )   a n d   h a s a t t r ( i t e m ,   " g e t _ t a r g e t " )   
+                                                     a n d   h a s a t t r ( i t e m ,   " _ i s _ i n c l u s i o n " ) ] 
+                 
+                 i n c l u s i o n _ f u n c t i o n s   =   [ ] 
+                 f o r   a r r o w   i n   a r r o w s _ i n _ s c e n e : 
+                         i f   a r r o w . _ i s _ i n c l u s i o n   a n d   h a s a t t r ( a r r o w ,   " g e t _ t e x t " ) : 
+                                 a r r o w _ t e x t   =   a r r o w . g e t _ t e x t ( ) . s t r i p ( ) 
+                                 i f   a r r o w _ t e x t : 
+                                         i n c l u s i o n _ f u n c t i o n s . a p p e n d ( a r r o w _ t e x t ) 
+                 
+                 #   F i n d   a n d   r e p l a c e   a l l   i n c l u s i o n   a p p l i c a t i o n s 
+                 n e w _ t e x t   =   d i s p l a y _ t e x t 
+                 a p p l i c a t i o n s   =   s e l f . _ f i n d _ i n c l u s i o n _ a p p l i c a t i o n s ( d i s p l a y _ t e x t ,   i n c l u s i o n _ f u n c t i o n s ) 
+                 
+                 #   S o r t   b y   p o s i t i o n   ( r e v e r s e   o r d e r   t o   a v o i d   o f f s e t   i s s u e s ) 
+                 a p p l i c a t i o n s . s o r t ( k e y = l a m b d a   x :   x [ " s t a r t " ] ,   r e v e r s e = T r u e ) 
+                 
+                 #   S t o r e   f o r   u n d o 
+                 s e l f . i n c l u s i o n s _ f o u n d   =   a p p l i c a t i o n s 
+                 
+                 #   R e p l a c e   e a c h   a p p l i c a t i o n 
+                 f o r   a p p   i n   a p p l i c a t i o n s : 
+                         n e w _ t e x t   =   n e w _ t e x t [ : a p p [ " s t a r t " ] ]   +   a p p [ " r e p l a c e m e n t " ]   +   n e w _ t e x t [ a p p [ " e n d " ] : ] 
+                 
+                 #   U p d a t e   t h e   n o d e 
+                 s e l f . n o d e . s e t _ t e x t ( n e w _ t e x t ) 
+                 s e l f . n o d e . _ b a s e _ n a m e   =   s e l f . o r i g i n a l _ b a s e _ n a m e 
+                 
+                 #   U p d a t e   c o n n e c t i o n   p o i n t s   o f   a l l   a r r o w s   c o n n e c t e d   t o   t h i s   n o d e 
+                 s e l f . _ u p d a t e _ c o n n e c t e d _ a r r o w s ( ) 
+         
+         d e f   _ u p d a t e _ c o n n e c t e d _ a r r o w s ( s e l f ) : 
+                 " " " U p d a t e   c o n n e c t i o n   p o i n t s   o f   a l l   a r r o w s   c o n n e c t e d   t o   t h i s   n o d e . " " " 
+                 i f   n o t   s e l f . n o d e   o r   n o t   s e l f . n o d e . s c e n e ( ) : 
+                         r e t u r n 
+                 
+                 #   F i n d   a l l   a r r o w s   c o n n e c t e d   t o   t h i s   n o d e 
+                 f o r   i t e m   i n   s e l f . n o d e . s c e n e ( ) . i t e m s ( ) : 
+                         i f   h a s a t t r ( i t e m ,   " g e t _ s o u r c e " )   a n d   h a s a t t r ( i t e m ,   " g e t _ t a r g e t " ) : 
+                                 #   C h e c k   i f   t h i s   a r r o w   i s   c o n n e c t e d   t o   t h e   n o d e 
+                                 i f   i t e m . g e t _ s o u r c e ( )   = =   s e l f . n o d e   o r   i t e m . g e t _ t a r g e t ( )   = =   s e l f . n o d e : 
+                                         i t e m . u p d a t e _ p o s i t i o n ( ) 
+                 
+                 #   C h e c k   a n d   a d j u s t   g r i d   s p a c i n g   i f   a u t o - s p a c i n g   i s   e n a b l e d 
+                 s e l f . _ c h e c k _ a u t o _ g r i d _ s p a c i n g ( ) 
+         
+         d e f   u n a p p l y ( s e l f )   - >   N o n e : 
+                 " " " R e s t o r e   t h e   o r i g i n a l   n o d e   t e x t . " " " 
+                 i f   n o t   s e l f . n o d e : 
+                         r e t u r n 
+                         
+                 #   R e s t o r e   o r i g i n a l   t e x t   a n d   b a s e   n a m e 
+                 i f   h a s a t t r ( s e l f ,   " o r i g i n a l _ t e x t " ) : 
+                         s e l f . n o d e . s e t _ t e x t ( s e l f . o r i g i n a l _ t e x t ) 
+                 i f   h a s a t t r ( s e l f ,   " o r i g i n a l _ b a s e _ n a m e " ) : 
+                         s e l f . n o d e . _ b a s e _ n a m e   =   s e l f . o r i g i n a l _ b a s e _ n a m e 
+ 
+                 #   U p d a t e   c o n n e c t i o n   p o i n t s   o f   a l l   a r r o w s   c o n n e c t e d   t o   t h i s   n o d e 
+                 s e l f . _ u p d a t e _ c o n n e c t e d _ a r r o w s ( ) 
+  
+ 
