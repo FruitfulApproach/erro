@@ -4,7 +4,7 @@
 # Wing project file                                              #
 ##################################################################
 [project attributes]
-proj.directory-list = [{'dirloc': loc('../Pythom'),
+proj.directory-list = [{'dirloc': loc('.'),
                         'excludes': (),
                         'filter': '*',
                         'include_hidden': False,

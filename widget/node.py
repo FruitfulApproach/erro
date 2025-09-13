@@ -12,6 +12,9 @@ class Node(QGraphicsObject):
     # Signal emitted when node is moved
     node_moved = pyqtSignal(object)
     
+    # Signal emitted when node name/text changes
+    name_changed = pyqtSignal(str)  # emits the new name
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
@@ -58,7 +61,7 @@ class Node(QGraphicsObject):
             
             # Check if this position is occupied by another object (only for Object nodes)
             if hasattr(self, 'get_text') and self.scene():  # This identifies Object nodes
-                from object_node import Object
+                from .object_node import Object
                 for item in self.scene().items():
                     if isinstance(item, Object) and item != self:
                         item_pos = item.pos()
@@ -77,7 +80,7 @@ class Node(QGraphicsObject):
             # Update self-loops when an object moves (only for Object nodes)
             if hasattr(self, 'get_text') and self.scene():
                 # Import here to avoid circular imports
-                from arrow import Arrow
+                from .arrow import Arrow
                 Arrow.update_self_loops_for_node(self)
         
         return super().itemChange(change, value)
@@ -108,28 +111,39 @@ class Node(QGraphicsObject):
     def mousePressEvent(self, event):
         """Handle mouse press events to start tracking moves."""
         from PyQt6.QtCore import Qt
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._start_position = self.pos()
-            self._is_moving = True
+        # Accept any mouse button for movement, not just left button
+        self._start_position = self.pos()
+        self._is_moving = True
+        self._move_button = event.button()  # Remember which button started the move
         super().mousePressEvent(event)
     
     def mouseReleaseEvent(self, event):
         """Handle mouse release events to complete move tracking."""
         from PyQt6.QtCore import Qt
+        print(f"Node mouseReleaseEvent: button={event.button()}, pos={event.pos()}")
+        print(f"Current position: {self.pos()}, start position: {self._start_position}")
+        print(f"Has get_text: {hasattr(self, 'get_text')}")
+        
         if (event.button() == Qt.MouseButton.LeftButton and 
             self._is_moving and 
             self._start_position is not None and 
             hasattr(self, 'get_text')):  # Only for Object nodes, not arrows
             
             end_position = self.pos()
+            print(f"End position: {end_position}")
             if self._start_position != end_position:
+                print("Creating MoveObject command...")
                 # Create move command
-                from undo_commands import MoveObject
+                from core.undo_commands import MoveObject
                 from PyQt6.QtWidgets import QApplication
                 
                 command = MoveObject(self, self._start_position, end_position)
                 app = QApplication.instance()
+                print(f"App has undo_stack: {hasattr(app, 'undo_stack')}")
                 app.undo_stack.push(command)
+                print("Move command pushed to undo stack")
+            else:
+                print("No position change detected")
         
         self._is_moving = False
         self._start_position = None

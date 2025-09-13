@@ -18,7 +18,7 @@ class AdditionalLabel(QGraphicsTextItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         
         # Set default font and styling
-        font = QFont("Arial", 10)
+        font = QFont("Arial", 12)
         self.setFont(font)
         self.setDefaultTextColor(QColor(0, 0, 0))
         
@@ -52,7 +52,7 @@ class AdditionalLabel(QGraphicsTextItem):
     
     def delete_label(self):
         """Delete this label from the scene."""
-        from undo_commands import DeleteLabel
+        from core.undo_commands import DeleteLabel
         from PyQt6.QtWidgets import QApplication
         
         if self.scene():

@@ -3,6 +3,43 @@ Undo commands for the Pythom DAG diagram editor.
 """
 from PyQt6.QtGui import QUndoCommand
 from PyQt6.QtCore import QPointF
+from .proof_step import ProofStep
+
+
+class ProofStepCommand(QUndoCommand):
+    """Command to execute and undo proof steps."""
+    
+    def __init__(self, proof_step: ProofStep, description: str = None):
+        description = description or f"Apply {proof_step.__class__.__name__}"
+        super().__init__(description)
+        self.proof_step = proof_step
+        self.tab_index = proof_step.get_affected_tab_index()
+    
+    def redo(self):
+        """Execute the proof step and switch to the appropriate tab."""
+        # Switch to the tab where this proof step applies
+        self._switch_to_tab()
+        
+        # Execute the proof step
+        self.proof_step.apply()
+    
+    def undo(self):
+        """Undo the proof step and switch to the appropriate tab."""
+        # Switch to the tab where this proof step applies
+        self._switch_to_tab()
+        
+        # Undo the proof step
+        self.proof_step.unapply()
+    
+    def _switch_to_tab(self):
+        """Switch to the tab where this proof step applies."""
+        if self.tab_index >= 0:
+            # Find the main window and switch tabs
+            scene = self.proof_step.scene
+            if hasattr(scene, 'parent') and scene.parent():
+                main_window = scene.parent()
+                if hasattr(main_window, 'tab_widget'):
+                    main_window.tab_widget.setCurrentIndex(self.tab_index)
 
 
 class RenameObject(QUndoCommand):
@@ -16,11 +53,11 @@ class RenameObject(QUndoCommand):
     
     def redo(self):
         """Execute the rename."""
-        self.obj.set_text(self.new_name)
+        self.obj.set_base_name(self.new_name)
     
     def undo(self):
         """Undo the rename."""
-        self.obj.set_text(self.old_name)
+        self.obj.set_base_name(self.old_name)
 
 
 class RenameArrow(QUndoCommand):
@@ -34,11 +71,29 @@ class RenameArrow(QUndoCommand):
     
     def redo(self):
         """Execute the rename."""
-        self.arrow.set_text(self.new_name)
+        self.arrow.set_base_name(self.new_name)
     
     def undo(self):
         """Undo the rename."""
-        self.arrow.set_text(self.old_name)
+        self.arrow.set_base_name(self.old_name)
+
+
+class MoveObject(QUndoCommand):
+    """Command to move an object node."""
+    
+    def __init__(self, obj, old_position, new_position):
+        super().__init__(f"Move Object '{obj.get_text()}'")
+        self.obj = obj
+        self.old_position = old_position
+        self.new_position = new_position
+    
+    def redo(self):
+        """Execute the move."""
+        self.obj.setPos(self.new_position)
+    
+    def undo(self):
+        """Undo the move."""
+        self.obj.setPos(self.old_position)
 
 
 class PlaceObject(QUndoCommand):
@@ -77,7 +132,7 @@ class PlaceArrow(QUndoCommand):
         self.scene.addItem(self.arrow)
         
         # Update parallel arrows and self-loops
-        from arrow import Arrow
+        from widget.arrow import Arrow
         Arrow.update_parallel_arrows_in_scene(self.scene)
         if self.start_node:
             Arrow.update_self_loops_for_node(self.start_node)
@@ -89,7 +144,7 @@ class PlaceArrow(QUndoCommand):
         self.scene.removeItem(self.arrow)
         
         # Update parallel arrows and self-loops after removal
-        from arrow import Arrow
+        from widget.arrow import Arrow
         Arrow.update_parallel_arrows_in_scene(self.scene)
         if self.start_node:
             Arrow.update_self_loops_for_node(self.start_node)
@@ -111,8 +166,8 @@ class DeleteItems(QUndoCommand):
         self.item_data = []
         
         # Store item data for restoration
-        from object_node import Object
-        from arrow import Arrow
+        from widget.object_node import Object
+        from widget.arrow import Arrow
         
         for item in items:
             data = {'item': item}
@@ -148,18 +203,22 @@ class DeleteItems(QUndoCommand):
     
     def redo(self):
         """Execute the deletion."""
-        from arrow import Arrow
+        from widget.arrow import Arrow
         
-        # Remove cascade arrows first
+        # Clean up signal connections before removing cascade arrows
         for data in self.cascade_arrows:
             arrow = data['item']
             if arrow.scene() == self.scene:
+                if hasattr(arrow, '_signal_cleanup'):
+                    arrow._signal_cleanup()
                 self.scene.removeItem(arrow)
         
-        # Remove the selected items
+        # Clean up signal connections before removing selected items
         for data in self.item_data:
             item = data['item']
             if item.scene() == self.scene:
+                if hasattr(item, '_signal_cleanup'):
+                    item._signal_cleanup()
                 self.scene.removeItem(item)
         
         # Update parallel arrows and self-loops after deletion
@@ -174,8 +233,8 @@ class DeleteItems(QUndoCommand):
     
     def undo(self):
         """Undo the deletion."""
-        from object_node import Object
-        from arrow import Arrow
+        from widget.object_node import Object
+        from widget.arrow import Arrow
         
         # Restore original items first
         for data in self.item_data:
@@ -200,6 +259,10 @@ class DeleteItems(QUndoCommand):
                 if 'source' in data and 'target' in data:
                     if hasattr(item, 'set_nodes'):
                         item.set_nodes(data['source'], data['target'])
+                
+                # Set up signal connections for restored arrow
+                if hasattr(item, '_signal_setup'):
+                    item._signal_setup()
         
         # Restore cascade arrows
         for data in self.cascade_arrows:
@@ -216,6 +279,10 @@ class DeleteItems(QUndoCommand):
                 if 'source' in data and 'target' in data:
                     if hasattr(item, 'set_nodes'):
                         item.set_nodes(data['source'], data['target'])
+                
+                # Set up signal connections for restored cascade arrow
+                if hasattr(item, '_signal_setup'):
+                    item._signal_setup()
         
         # Update parallel arrows and self-loops after restoration
         Arrow.update_parallel_arrows_in_scene(self.scene)
@@ -246,3 +313,46 @@ class FlipArrowCommand(QUndoCommand):
         """Undo the flip."""
         # Restore the original source and target
         self.arrow.set_nodes(self.original_source, self.original_target)
+
+
+class CreateMappedElementCommand(QUndoCommand):
+    """Command to create a mapped element f(x) in the codomain of an arrow f."""
+    
+    def __init__(self, scene, arrow, element_name, function_name):
+        super().__init__(f"Map element {element_name} via {function_name}")
+        self.scene = scene
+        self.arrow = arrow
+        self.element_name = element_name
+        self.function_name = function_name
+        self.created_object = None
+        
+    def redo(self):
+        """Create the mapped element in the codomain."""
+        if self.created_object is None:
+            # Create new object in the codomain
+            from widget.object_node import Object
+            
+            # Get the target (codomain) node
+            target_node = self.arrow.get_target()
+            if not target_node:
+                return
+                
+            # Position the new element near the target node
+            target_pos = target_node.pos()
+            new_pos = QPointF(target_pos.x() + 100, target_pos.y() + 50)
+            
+            # Create the mapped element with name f(x)
+            mapped_name = f"{self.function_name}({self.element_name})"
+            self.created_object = Object(text=mapped_name)
+            self.created_object.setPos(new_pos)
+            
+            # Add to scene
+            self.scene.addItem(self.created_object)
+        else:
+            # Re-add the object
+            self.scene.addItem(self.created_object)
+    
+    def undo(self):
+        """Remove the created mapped element."""
+        if self.created_object:
+            self.scene.removeItem(self.created_object)

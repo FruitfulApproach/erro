@@ -4,7 +4,7 @@ Object node for DAG diagrams - represents data or process nodes.
 from PyQt6.QtWidgets import QGraphicsItem, QMenu
 from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont, QAction
-from node import Node
+from .node import Node
 
 
 class Object(Node):
@@ -13,7 +13,9 @@ class Object(Node):
     def __init__(self, text="Object", parent=None):
         super().__init__(parent)
         self._text = text
-        self._font = QFont("Arial", 12, QFont.Weight.Bold)  # Bold font for better visibility
+        self._base_name = text  # Store the original/base name
+        self._font = QFont("Arial", 14, QFont.Weight.Bold)  # Bold font for better visibility
+        self._label_manually_hidden = False  # Manual label hiding flag
         
         # Object-specific styling - transparent background and border
         self.set_size(80, 80)  # Square 80x80 pixels, fits well in 100x100 grid
@@ -44,6 +46,10 @@ class Object(Node):
         w = text_rect.width() + 2 * pad_size
         h = text_rect.height() + 2 * pad_size
         
+        # If width is less than height, make the object square using height
+        if w < h:
+            w = h
+        
         # Return rectangle centered around origin
         return QRectF(-w/2, -h/2, w, h)
         
@@ -60,11 +66,12 @@ class Object(Node):
         painter.drawRoundedRect(rect, self._corner_radius, self._corner_radius)
         
         # Draw text centered in a smaller rectangle with padding
-        padding = 10  # Double the previous padding (was 5)
-        text_rect = rect.adjusted(padding, padding, -padding, -padding)
-        painter.setPen(QPen(QColor(0, 0, 0)))
-        painter.setFont(self._font)
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, self._text)
+        if not self._label_manually_hidden:
+            padding = 10  # Double the previous padding (was 5)
+            text_rect = rect.adjusted(padding, padding, -padding, -padding)
+            painter.setPen(QPen(QColor(0, 0, 0)))
+            painter.setFont(self._font)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, self._text)
         
         # Draw selection highlight if selected
         if self.isSelected():
@@ -74,12 +81,40 @@ class Object(Node):
     
     def set_text(self, text):
         """Set the text displayed on the object."""
+        old_text = self._text
         self._text = text
         self.prepareGeometryChange()  # Notify that geometry will change
         self.update()
+        
+        # Emit signal if text actually changed
+        if old_text != text:
+            self.name_changed.emit(self._base_name)  # Emit base name, not display text
+    
+    def set_base_name(self, name):
+        """Set the base name of the object."""
+        old_name = self._base_name
+        self._base_name = name
+        # If no element prefix, also update display text
+        if ':' not in self._text:
+            self.set_text(name)
+        else:
+            # Update display text while preserving element prefix
+            parts = self._text.split(':', 1)
+            if len(parts) == 2:
+                element = parts[0]
+                new_display = f"{element}:{name}"
+                self.set_text(new_display)
+        
+        # Emit signal if base name actually changed
+        if old_name != name:
+            self.name_changed.emit(name)
     
     def get_text(self):
-        """Get the text displayed on the object."""
+        """Get the base name of the object (not the display text)."""
+        return self._base_name
+    
+    def get_display_text(self):
+        """Get the text displayed visually on the object."""
         return self._text
     
     def type(self):
@@ -98,6 +133,16 @@ class Object(Node):
         # Add separator
         menu.addSeparator()
         
+        # Add "Hide Label" toggle action
+        hide_label_action = QAction("Hide Label", menu)
+        hide_label_action.setCheckable(True)
+        hide_label_action.setChecked(self._label_manually_hidden)
+        hide_label_action.triggered.connect(self.toggle_label_visibility)
+        menu.addAction(hide_label_action)
+        
+        # Add separator
+        menu.addSeparator()
+        
         # Add "Delete" action
         delete_action = QAction("Delete", menu)
         delete_action.triggered.connect(self.delete_object)
@@ -108,24 +153,29 @@ class Object(Node):
     
     def edit_name(self):
         """Open the rename dialog to edit the object's name."""
-        from object_rename_dialog import ObjectRenameDialog
-        from undo_commands import RenameObject
+        from dialog.object_rename_dialog import ObjectRenameDialog
+        from core.undo_commands import RenameObject
         from PyQt6.QtWidgets import QApplication
         
-        dialog = ObjectRenameDialog(self._text, self.scene().views()[0])
+        dialog = ObjectRenameDialog(self._base_name, self.scene().views()[0])
         if dialog.exec() == dialog.DialogCode.Accepted:
             new_name = dialog.get_name()
-            if new_name and new_name != self._text:  # Only update if name changed
+            if new_name and new_name != self._base_name:  # Compare with base name
                 # Create and push undo command
-                command = RenameObject(self, self._text, new_name)
+                command = RenameObject(self, self._base_name, new_name)
                 app = QApplication.instance()
                 app.undo_stack.push(command)
     
     def delete_object(self):
         """Delete this object."""
-        from undo_commands import DeleteItems
+        from core.undo_commands import DeleteItems
         from PyQt6.QtWidgets import QApplication
         
         command = DeleteItems(self.scene(), [self])
         app = QApplication.instance()
         app.undo_stack.push(command)
+    
+    def toggle_label_visibility(self):
+        """Toggle manual label visibility."""
+        self._label_manually_hidden = not self._label_manually_hidden
+        self.update()  # Trigger repaint

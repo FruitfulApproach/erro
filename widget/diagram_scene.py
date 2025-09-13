@@ -4,7 +4,7 @@ Custom QGraphicsScene for DAG diagrams.
 from PyQt6.QtWidgets import QGraphicsScene, QMenu
 from PyQt6.QtCore import QRectF, QPointF, pyqtSignal, QTimer
 from PyQt6.QtGui import QPen, QColor, QAction, QUndoCommand
-from cycle_detector import CycleDetector
+from core.cycle_detector import CycleDetector
 
 
 class DiagramScene(QGraphicsScene):
@@ -49,6 +49,16 @@ class DiagramScene(QGraphicsScene):
         self._validation_timer = QTimer()
         self._validation_timer.timeout.connect(self._validate_arrows_and_cycles)
         self._validation_timer.start(5000)  # Validate every 5 seconds
+    
+    @property
+    def is_abelian_category(self):
+        """Return whether this diagram represents an abelian category."""
+        return True
+    
+    @property    
+    def is_concrete_category(self):
+        """Return whether this diagram represents a concrete category."""
+        return True
         
     def drawBackground(self, painter, rect):
         """Draw the grid background."""
@@ -110,14 +120,32 @@ class DiagramScene(QGraphicsScene):
         self.update()
     
     def mouseDoubleClickEvent(self, event):
-        """Handle double-click events to add objects or create arrows."""
+        """Handle double-click events to add objects, create arrows, or select arrows."""
+        from PyQt6.QtGui import QTransform
+        
         # Find all items at the clicked position
         items_at_pos = self.items(event.scenePos())
         
-        # Look for the first Object node (ignore arrows)
+        # First check if we double-clicked on an arrow
+        target_arrow = None
+        for item in items_at_pos:
+            # Check if it's an Arrow (has get_text but not like Object nodes)
+            if hasattr(item, 'get_text') and hasattr(item, '_start_node') and hasattr(item, '_end_node'):
+                target_arrow = item
+                break
+        
+        # If we double-clicked on an arrow, select it exclusively and return
+        if target_arrow:
+            # Clear all selection first
+            self.clearSelection()
+            # Select only the double-clicked arrow
+            target_arrow.setSelected(True)
+            return
+        
+        # Look for Object nodes (ignore arrows)
         target_object = None
         for item in items_at_pos:
-            if hasattr(item, 'get_text'):  # This identifies Object nodes
+            if hasattr(item, 'get_text') and not (hasattr(item, '_start_node') and hasattr(item, '_end_node')):
                 target_object = item
                 break
         
@@ -137,7 +165,7 @@ class DiagramScene(QGraphicsScene):
             return
         
         # Otherwise, create a new object at the double-click position
-        from object_node import Object
+        from .object_node import Object
         
         pos = self.snap_to_grid(event.scenePos())
         
@@ -152,7 +180,7 @@ class DiagramScene(QGraphicsScene):
         obj = Object(node_name)
         
         # Create and push undo command instead of directly adding
-        from undo_commands import PlaceObject
+        from core.undo_commands import PlaceObject
         from PyQt6.QtWidgets import QApplication
         
         command = PlaceObject(self, obj, pos)
@@ -166,7 +194,7 @@ class DiagramScene(QGraphicsScene):
     
     def gather_object_names(self):
         """Return a set of all existing Object names in the scene."""
-        from object_node import Object
+        from .object_node import Object
         names = set()
         for item in self.items():
             if isinstance(item, Object):
@@ -193,7 +221,7 @@ class DiagramScene(QGraphicsScene):
     
     def gather_arrow_names(self):
         """Return a set of all existing Arrow names in the scene."""
-        from arrow import Arrow
+        from .arrow import Arrow
         names = set()
         for item in self.items():
             if isinstance(item, Arrow):
@@ -236,8 +264,9 @@ class DiagramScene(QGraphicsScene):
         super().mouseMoveEvent(event)
     
     def mousePressEvent(self, event):
-        """Handle mouse press events."""
+        """Handle mouse press events with additive selection."""
         from PyQt6.QtCore import Qt
+        from PyQt6.QtGui import QTransform
         
         # Validate arrows on any mouse press to catch orphaned arrows
         self._validate_arrows_and_cycles()
@@ -247,6 +276,22 @@ class DiagramScene(QGraphicsScene):
             self.cancel_arrow_creation()
             return
         
+        # Handle selection for left clicks
+        if event.button() == Qt.MouseButton.LeftButton:
+            item = self.itemAt(event.scenePos(), QTransform())
+            
+            if item and (item.flags() & item.GraphicsItemFlag.ItemIsSelectable):
+                # Toggle item selection (additive behavior)
+                item.setSelected(not item.isSelected())
+                event.accept()
+                return
+            elif not item:
+                # Clicked on empty space - clear all selection
+                self.clearSelection()
+                event.accept()
+                return
+        
+        # For other cases, use default behavior
         super().mousePressEvent(event)
     
     def mouseReleaseEvent(self, event):
@@ -259,9 +304,13 @@ class DiagramScene(QGraphicsScene):
         """Handle key press events."""
         from PyQt6.QtCore import Qt
         
-        # Check for ESC key to cancel arrow creation
-        if event.key() == Qt.Key.Key_Escape and self._arrow_creation_mode:
-            self.cancel_arrow_creation()
+        # Check for ESC key
+        if event.key() == Qt.Key.Key_Escape:
+            if self._arrow_creation_mode:
+                self.cancel_arrow_creation()
+            else:
+                # Clear selection when not in arrow creation mode
+                self.clearSelection()
             return
         
         # Check for Delete key to delete selected items
@@ -290,7 +339,7 @@ class DiagramScene(QGraphicsScene):
             return  # Nothing deletable selected
         
         # Create and execute delete command
-        from undo_commands import DeleteItems
+        from core.undo_commands import DeleteItems
         from PyQt6.QtWidgets import QApplication
         
         command = DeleteItems(self, deletable_items)
@@ -330,8 +379,8 @@ class DiagramScene(QGraphicsScene):
     
     def add_label_at_position(self, position):
         """Add a new AdditionalLabel at the specified position."""
-        from additional_label import AdditionalLabel
-        from undo_commands import PlaceLabel
+        from .additional_label import AdditionalLabel
+        from core.undo_commands import PlaceLabel
         from PyQt6.QtWidgets import QApplication
         
         # Create new label
@@ -370,7 +419,7 @@ class DiagramScene(QGraphicsScene):
     
     def start_arrow_creation(self, start_node):
         """Start creating an arrow from the given node."""
-        from arrow import Arrow
+        from .arrow import Arrow
         
         self._arrow_creation_mode = True
         self._arrow_start_node = start_node
@@ -409,8 +458,8 @@ class DiagramScene(QGraphicsScene):
     
     def _validate_arrows_and_cycles(self):
         """Remove any arrows that don't have both source and target nodes and detect cycles."""
-        from arrow import Arrow
-        from object_node import Object
+        from .arrow import Arrow
+        from .object_node import Object
         
         # First, validate arrows as before
         arrows_to_remove = []
@@ -442,8 +491,8 @@ class DiagramScene(QGraphicsScene):
     
     def _detect_and_highlight_cycles(self):
         """Detect cycles in the graph and highlight them in red."""
-        from arrow import Arrow
-        from object_node import Object
+        from .arrow import Arrow
+        from .object_node import Object
         
         # Clear previous highlighting
         self._clear_cycle_highlighting()
@@ -474,7 +523,7 @@ class DiagramScene(QGraphicsScene):
     
     def _highlight_cycle(self, cycle_nodes, arrows):
         """Highlight a specific cycle in red."""
-        from arrow import Arrow
+        from .arrow import Arrow
         
         # Get the arrows that form the cycle
         cycle_arrows = self._cycle_detector.get_cycle_arrows(cycle_nodes, arrows)
@@ -492,8 +541,8 @@ class DiagramScene(QGraphicsScene):
     
     def _clear_cycle_highlighting(self):
         """Clear all cycle highlighting."""
-        from arrow import Arrow
-        from object_node import Object
+        from .arrow import Arrow
+        from .object_node import Object
         
         # Clear highlighting from all items
         for item in self.items():
@@ -505,7 +554,7 @@ class DiagramScene(QGraphicsScene):
     
     def _is_grid_position_occupied(self, position):
         """Check if a grid position is already occupied by another object."""
-        from object_node import Object
+        from .object_node import Object
         
         # Snap position to grid intersection
         grid_x = round(position.x() / self._grid_size) * self._grid_size
@@ -576,7 +625,7 @@ class DiagramScene(QGraphicsScene):
             self._current_arrow.set_text(arrow_name)
             
             # Create and push undo command for arrow placement
-            from undo_commands import PlaceArrow
+            from core.undo_commands import PlaceArrow
             from PyQt6.QtWidgets import QApplication
             
             command = PlaceArrow(self, self._current_arrow, self._arrow_start_node, end_node)
@@ -593,6 +642,10 @@ class DiagramScene(QGraphicsScene):
             
             # Validate all arrows and remove incomplete ones
             self._validate_arrows_and_cycles()
+            
+            # Update parallel arrow positioning
+            from widget.arrow import Arrow
+            Arrow.update_parallel_arrows_in_scene(self)
             
             # Update status
             if hasattr(self.parent(), 'status_bar'):
@@ -617,7 +670,7 @@ class DiagramScene(QGraphicsScene):
         node_name = self._get_next_node_name()
         
         # Create the new object
-        from object_node import Object
+        from .object_node import Object
         new_obj = Object(node_name)
         
         # Set the arrow name
@@ -625,7 +678,7 @@ class DiagramScene(QGraphicsScene):
         self._current_arrow.set_text(arrow_name)
         
         # Create undo commands for both object and arrow placement
-        from undo_commands import PlaceObject, PlaceArrow
+        from core.undo_commands import PlaceObject, PlaceArrow
         from PyQt6.QtWidgets import QApplication
         
         app = QApplication.instance()
@@ -652,6 +705,10 @@ class DiagramScene(QGraphicsScene):
         
         # Validate all arrows and remove incomplete ones
         self._validate_arrows_and_cycles()
+        
+        # Update parallel arrow positioning
+        from widget.arrow import Arrow
+        Arrow.update_parallel_arrows_in_scene(self)
         
         # Update status
         if hasattr(self.parent(), 'status_bar'):

@@ -1,0 +1,408 @@
+{
+  "version": "1.0",
+  "timestamp": "20250912_152630",
+  "windows": [
+    {
+      "tab_name": "ℬ",
+      "scene_data": {
+        "objects": [
+          {
+            "id": 2426933849744,
+            "text": "0",
+            "position": {
+              "x": -150.0,
+              "y": 150.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933810896,
+            "text": "0",
+            "position": {
+              "x": 450.0,
+              "y": 150.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933764784,
+            "text": "0",
+            "position": {
+              "x": 450.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933524464,
+            "text": "F",
+            "position": {
+              "x": 300.0,
+              "y": 150.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933762864,
+            "text": "E",
+            "position": {
+              "x": 150.0,
+              "y": 150.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933762544,
+            "text": "D",
+            "position": {
+              "x": 0.0,
+              "y": 150.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933524144,
+            "text": "C",
+            "position": {
+              "x": 300.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933523344,
+            "text": "B",
+            "position": {
+              "x": 150.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933521104,
+            "text": "0",
+            "position": {
+              "x": -150.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          },
+          {
+            "id": 2426933520144,
+            "text": "A",
+            "position": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "size": {
+              "width": 37.0,
+              "height": 37.0
+            }
+          }
+        ],
+        "arrows": [
+          {
+            "id": 2426933848624,
+            "source_id": 2426933849744,
+            "target_id": 2426933762544,
+            "text": "0",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933850224,
+            "source_id": 2426933524464,
+            "target_id": 2426933810896,
+            "text": "0",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933765744,
+            "source_id": 2426933524144,
+            "target_id": 2426933764784,
+            "text": "0",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933765424,
+            "source_id": 2426933762544,
+            "target_id": 2426933762864,
+            "text": "g",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933764944,
+            "source_id": 2426933762864,
+            "target_id": 2426933524464,
+            "text": "f",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933763824,
+            "source_id": 2426933523344,
+            "target_id": 2426933762864,
+            "text": "e",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933763984,
+            "source_id": 2426933520144,
+            "target_id": 2426933762544,
+            "text": "d",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933764144,
+            "source_id": 2426933524144,
+            "target_id": 2426933524464,
+            "text": "c",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933523984,
+            "source_id": 2426933523344,
+            "target_id": 2426933524144,
+            "text": "b",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933524304,
+            "source_id": 2426933520144,
+            "target_id": 2426933523344,
+            "text": "a",
+            "color": "#000000"
+          },
+          {
+            "id": 2426933521264,
+            "source_id": 2426933521104,
+            "target_id": 2426933520144,
+            "text": "0",
+            "color": "#000000"
+          }
+        ],
+        "scene_rect": {
+          "x": -2000.0,
+          "y": -2000.0,
+          "width": 4000.0,
+          "height": 4000.0
+        }
+      }
+    }
+  ],
+  "undo_stack": {
+    "commands": [
+      {
+        "type": "RenameArrow",
+        "text": "Rename Arrow '0' to 'l'",
+        "data": {
+          "old_name": "0",
+          "new_name": "l"
+        }
+      },
+      {
+        "type": "RenameArrow",
+        "text": "Rename Arrow 'l' to '0'",
+        "data": {
+          "old_name": "l",
+          "new_name": "0"
+        }
+      },
+      {
+        "type": "MoveObject",
+        "text": "Move Object '0'",
+        "data": {}
+      },
+      {
+        "type": "FlipArrowCommand",
+        "text": "Flip Arrow '0'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'B'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'a'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'C'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'b'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'D'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'E'",
+        "data": {}
+      },
+      {
+        "type": "MoveObject",
+        "text": "Move Object 'E'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'F'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'c'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'd'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'e'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'f'",
+        "data": {}
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'g'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'G'",
+        "data": {}
+      },
+      {
+        "type": "RenameObject",
+        "text": "Rename Object 'G' to '0'",
+        "data": {
+          "obj_text": "0",
+          "obj_pos": {
+            "x": 450.0,
+            "y": 0.0
+          },
+          "old_name": "G",
+          "new_name": "0"
+        }
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'h'",
+        "data": {}
+      },
+      {
+        "type": "RenameArrow",
+        "text": "Rename Arrow 'h' to '0'",
+        "data": {
+          "old_name": "h",
+          "new_name": "0"
+        }
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'G'",
+        "data": {}
+      },
+      {
+        "type": "RenameObject",
+        "text": "Rename Object 'G' to '0'",
+        "data": {
+          "obj_text": "0",
+          "obj_pos": {
+            "x": 450.0,
+            "y": 150.0
+          },
+          "old_name": "G",
+          "new_name": "0"
+        }
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'h'",
+        "data": {}
+      },
+      {
+        "type": "PlaceObject",
+        "text": "Place Object 'G'",
+        "data": {}
+      },
+      {
+        "type": "RenameObject",
+        "text": "Rename Object 'G' to '0'",
+        "data": {
+          "obj_text": "0",
+          "obj_pos": {
+            "x": -150.0,
+            "y": 150.0
+          },
+          "old_name": "G",
+          "new_name": "0"
+        }
+      },
+      {
+        "type": "PlaceArrow",
+        "text": "Place Arrow 'i'",
+        "data": {}
+      },
+      {
+        "type": "RenameArrow",
+        "text": "Rename Arrow 'i' to '0'",
+        "data": {
+          "old_name": "i",
+          "new_name": "0"
+        }
+      },
+      {
+        "type": "RenameArrow",
+        "text": "Rename Arrow 'h' to '0'",
+        "data": {
+          "old_name": "h",
+          "new_name": "0"
+        }
+      }
+    ],
+    "clean_index": 0,
+    "current_index": 29
+  }
+}

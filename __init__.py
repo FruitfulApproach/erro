@@ -17,12 +17,12 @@ __version__ = "1.0.0"
 __author__ = "Pythom Developer"
 
 # Import main classes for easy access
-from node import Node
-from object_node import Object
-from arrow import Arrow
-from diagram_scene import DiagramScene
-from diagram_view import DiagramView
-from main_window import MainWindow
+from widget.node import Node
+from widget.object_node import Object
+from widget.arrow import Arrow
+from widget.diagram_scene import DiagramScene
+from widget.diagram_view import DiagramView
+from widget.main_window import MainWindow
 
 __all__ = [
     'Node',
